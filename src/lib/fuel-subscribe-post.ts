@@ -68,12 +68,12 @@ export function buildFuelSubscribePost(input: SubscribePostInput): SubscribePost
     lines.push("")
   }
 
-  lines.push("Бот напишет, как только на заправке появится ваша марка.")
-  lines.push("Отмечают сами водители — те, кто прямо сейчас стоит у колонки.")
+  lines.push("Выберите АЗС и подпишитесь на вашу марку топлива.")
+  lines.push("Бот сообщит о новой отметке наличия. Данные дают сами водители — проверяйте время отметки.")
   lines.push("")
   lines.push("<b>Как это работает</b>")
   lines.push("• Выбираете марку — 92, 95, ДТ или газ")
-  lines.push("• Бот присылает сообщение, когда топливо появилось")
+  lines.push("• Бот сообщает о появлении топлива по отметкам водителей")
   lines.push("• Не чаще раза в час: без спама")
   lines.push("")
   lines.push("<i>Бесплатно. Вход через Telegram — без пароля и почты.</i>")
@@ -93,6 +93,7 @@ export function buildFuelSubscribePost(input: SubscribePostInput): SubscribePost
   buttons.push([{ text: "🗺 Открыть карту заправок", url: `${site}/services/fuel-map?from=chat` }])
 
   if (input.botUsername) {
+    buttons.push([{ text: "📱 Карта в Mini App", url: `https://t.me/${input.botUsername}?startapp=fuel` }])
     buttons.push([{ text: "⛽ Отметить свою заправку", url: `https://t.me/${input.botUsername}` }])
   }
 

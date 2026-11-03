@@ -72,6 +72,17 @@ test("подпись укладывается в предел Telegram", () => {
   assert.ok(post.text.length <= 1024, `получилось ${post.text.length}`)
 })
 
+test("длинные недоверенные поля сохраняют целые HTML-теги и бюджет фото", () => {
+  const post = buildFuelDigest({ ...base, city: "<&🚗".repeat(500), stations: Array.from({ length: 5 }, () => ({
+    ...station, name: "<&🚗".repeat(500), fuels: ["<&95".repeat(500)],
+  })) })
+  assert.ok(post.text.length <= 1024)
+  assert.equal((post.text.match(/<b>/g) || []).length, (post.text.match(/<\/b>/g) || []).length)
+  assert.equal((post.text.match(/<i>/g) || []).length, (post.text.match(/<\/i>/g) || []).length)
+  assert.doesNotMatch(post.text.replace(/&(amp|lt|gt);/g, ""), /&/)
+  assert.match(post.text, /могут разобрать/)
+})
+
 test("первая кнопка ведёт на карту", () => {
   const post = buildFuelDigest({ ...base, stations: [station] })
   assert.match(post.buttons[0].url, /\/services\/fuel-map/)
@@ -93,7 +104,9 @@ test("общий чат страны пропускается", () => {
 
 test("сводка уходит раз в сутки", () => {
   const broadcast = readFileSync(new URL("../src/lib/fuel-digest-broadcast.ts", import.meta.url), "utf8")
-  assert.match(broadcast, /CHAT_INTERVAL_MS = 20 \* 60 \* 60 \* 1000/)
+  assert.match(broadcast, /hasRecentFuelChatPost\(chat.id, now\)/)
+  assert.match(broadcast, /const image = fuelCampaignImage\(\)/)
+  assert.equal((broadcast.match(/photos: image \? \[image\] : \[\]/g) || []).length, 2)
 })
 
 test("в сводку идут настоящие названия, а не коды точек", () => {
@@ -127,4 +140,5 @@ test("«Открыть карту» остаётся первой кнопкой
      действие не должно уезжать вниз под второстепенные. */
   const post = buildFuelDigest({ ...base, stations: [station] })
   assert.ok(post.buttons[0].text.includes("Открыть карту"))
+  assert.ok(post.buttons.some(button => button.url === "https://t.me/lewheelbot?startapp=fuel"))
 })

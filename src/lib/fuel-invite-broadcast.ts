@@ -17,8 +17,9 @@ import { sendChatPost } from "@/lib/telegram-post-sender"
 import { buildFuelInvitePost, cityFromChatTitle } from "@/lib/fuel-invite-post"
 import { buildFuelSubscribePost } from "@/lib/fuel-subscribe-post"
 import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
-import { hasRecentFuelChatPost } from "./fuel-chat-frequency"
+import { hasRecentFuelChatPost, withFuelChatBroadcast } from "./fuel-chat-frequency"
 import { scheduleTelegramMessageCleanup } from "./telegram-message-cleanup"
+import { fuelCampaignImage } from "./fuel-campaign-image"
 
 /**
  * Обложка приглашения.
@@ -40,19 +41,6 @@ import { scheduleTelegramMessageCleanup } from "./telegram-message-cleanup"
  * папки молча не сработал бы: картинка не прочиталась бы с диска, ушла
  * ссылкой и не дошла.
  */
-function inviteImage(): string | null {
-  const configured = process.env.FUEL_INVITE_IMAGE?.trim()
-  if (!configured) return null
-  /* Чужой адрес Telegram скачает сам — там ограничение не действует. */
-  if (configured.startsWith("http")) return configured
-  /* Свой файл — только из /uploads: иначе пост уйдёт со ссылкой, которую
-     Telegram отвергнет, и не дойдёт совсем. Лучше отправить текстом. */
-  if (!configured.startsWith("/uploads/")) {
-    console.warn(`FUEL_INVITE_IMAGE должен указывать в /uploads, получено «${configured}» — пост уйдёт текстом`)
-    return null
-  }
-  return configured
-}
 
 export type InviteBroadcastResult = {
   chats: number
@@ -69,6 +57,10 @@ export type InviteBroadcastResult = {
  * человек примеряет на себя, «карта АЗС России» нет.
  */
 export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
+  return withFuelChatBroadcast(runFuelInvite, { chats: 0, sent: 0, skipped: 0, failed: 0 })
+}
+
+async function runFuelInvite(): Promise<InviteBroadcastResult> {
   const result: InviteBroadcastResult = { chats: 0, sent: 0, skipped: 0, failed: 0 }
 
   const chats = await prisma.telegramChat.findMany({
@@ -80,7 +72,7 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
   const now = new Date()
   const botUsername = getTelegramBotUsername() ?? undefined
   const siteUrl = absoluteUrl("/")
-  const image = inviteImage()
+  const image = fuelCampaignImage()
 
   /* Сколько отметок за сутки — числом можно похвастаться, когда их
      достаточно. Считаем один раз на всю рассылку: цифра общая. */

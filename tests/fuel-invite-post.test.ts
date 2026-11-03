@@ -98,22 +98,24 @@ test("у общего чата страны города нет", () => {
   assert.equal(cityFromChatTitle(null), null)
 })
 
-test("чат зовут раз в шесть часов, и частота настраивается", () => {
-  /* Было трое суток — из осторожности. Но сервис карты держится на числе
-     людей, а за трое суток пост уходил в глубину переписки и его не видел
-     никто, кроме тех, кто был в чате в ту минуту.
-
-     Шесть часов — четыре захода в сутки: утро, день, вечер и ночь. Нужный
-     темп виден только по реакции чатов, поэтому частота меняется из env,
-     без правки кода. */
+test("приглашение использует общий со сводкой суточный интервал", () => {
+  // Both kinds of scheduled fuel post share one rolling daily boundary.
   const broadcast = readFileSync(new URL("../src/lib/fuel-invite-broadcast.ts", import.meta.url), "utf8")
 
-  assert.match(broadcast, /DEFAULT_CHAT_INTERVAL_MS = 6 \* 60 \* 60 \* 1000/)
-  assert.match(broadcast, /FUEL_INVITE_INTERVAL_HOURS/)
+  assert.match(broadcast, /hasRecentFuelChatPost\(chat.id, now\)/)
+  const policy = readFileSync(new URL("../src/lib/fuel-chat-frequency.ts", import.meta.url), "utf8")
+  assert.match(policy, /FUEL_INVITE_INTERVAL_HOURS/)
 
-  /* Не чаще часа: при более частом повторе бота первым выкинет админ
-     чата, а не Telegram. */
-  assert.match(broadcast, /Math\.max\(1, configured\)/)
+  // A short override must not reintroduce several posts per day.
+  assert.match(policy, /Math\.max\(24, configured\)/)
+})
+
+test("сайт и Mini App доступны отдельно; текст не гарантирует наличие", () => {
+  const post = buildFuelInvitePost(base)
+  assert.ok(post.buttons.some(button => button.url === "https://t.me/lewheelbot?startapp=fuel"))
+  assert.ok(post.buttons.some(button => button.url.startsWith("https://lewheel.ru/services/fuel-map")))
+  assert.match(post.text, /проверяйте время отметки/)
+  assert.doesNotMatch(post.text, /есть прямо сейчас|первой|гаранти/i)
 })
 
 test("обложка приглашения читается с диска, а не по ссылке", () => {
@@ -125,13 +127,13 @@ test("обложка приглашения читается с диска, а �
      с диска, ушла ссылкой и не дошла. Поэтому чужой путь отклоняется
      сразу, с записью в журнал, и пост уходит текстом — это хуже картинки,
      но лучше молчания. */
-  const broadcast = readFileSync(new URL("../src/lib/fuel-invite-broadcast.ts", import.meta.url), "utf8")
+  const image = readFileSync(new URL("../src/lib/fuel-campaign-image.ts", import.meta.url), "utf8")
 
-  assert.match(broadcast, /configured\.startsWith\("\/uploads\/"\)/)
-  assert.match(broadcast, /пост уйдёт текстом/)
+  assert.match(image, /configured\.startsWith\("\/uploads\/"\)/)
+  assert.match(image, /пост уйдёт текстом/)
 
   /* Чужой адрес Telegram скачает сам — там ограничение не действует. */
-  assert.match(broadcast, /configured\.startsWith\("http"\)\) return configured/)
+  assert.match(image, /configured\.startsWith\("http"\)\) return configured/)
 })
 
 test("топливные новости отличают чат бензина от чата объявлений", () => {

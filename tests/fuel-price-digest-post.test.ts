@@ -13,6 +13,17 @@ const base = {
   mapUrl: "https://lewheel.ru/services/fuel-map/ufa",
 }
 
+test("длинные подписи сетей и URL не ломают подпись фотографии", () => {
+  const post = buildFuelPriceDigestPost({ ...base, city: "<&🚗".repeat(500), fuelLabel: "<&".repeat(500),
+    mapUrl: `https://lewheel.ru/${"&".repeat(1000)}`,
+    networks: [network("<&🚗".repeat(500), 6700), network("<&🚗".repeat(500), 6800), network("<&🚗".repeat(500), 6900)],
+  })
+  assert.ok(post && post.length <= 1024)
+  assert.equal((post.match(/<b>/g) || []).length, (post.match(/<\/b>/g) || []).length)
+  assert.doesNotMatch(post.replace(/&(amp|lt|gt);/g, ""), /&/)
+  assert.match(post, /67 ₽/)
+})
+
 test("сводка называет город, марку и дешёвую сеть", () => {
   // Числа из боевой базы по Уфе.
   const post = buildFuelPriceDigestPost({

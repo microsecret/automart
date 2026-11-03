@@ -52,7 +52,9 @@ await api("setChatMenuButton", {
 await api("setWebhook", {
   url: webhookUrl,
   secret_token: webhookSecret,
-  allowed_updates: ["message"],
+  // Membership events are required to remove non-admin bots immediately;
+  // callbacks must remain enabled for the existing interactive bot controls.
+  allowed_updates: ["message", "callback_query", "chat_member"],
   drop_pending_updates: false,
 })
 

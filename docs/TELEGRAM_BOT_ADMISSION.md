@@ -14,8 +14,8 @@ chat allowlist) are affected. The moderator must be a group administrator with
 `can_restrict_members`; service-message cleanup also needs `can_delete_messages`.
 Missing rights warn in the server log, never report a successful removal.
 
-The polling bridge now explicitly requests `chat_member` alongside messages and
-callbacks. Both the service message's new members and membership join events
+The polling bridge and webhook configuration both explicitly request
+`chat_member` alongside messages and callbacks. Both the service message's new members and membership join events
 reach the same tested guard before registration moderation. Normal human
 members are not targeted unless they are the confirmed human inviter of a
 successfully removed non-admin bot. That inviter is banned only after a live
@@ -74,6 +74,9 @@ no real group member is removed by the test suite.
 
 `node --test tests/telegram-bot-guard.test.mjs` runs on the server with injected
 Telegram transport and approval storage. It never bans a real bot during tests.
+`node --test tests/telegram-bot-configuration.test.mjs` evaluates the actual
+setup script with a mock provider and verifies membership/callback delivery,
+pending-update preservation and secret-free successful output.
 The additive migration creates only the approval table. Take an online SQLite
 backup before applying it, generate Prisma, build on the server and restart
 both `automart` and `automart-telegram`. Keep the polling offset file intact.

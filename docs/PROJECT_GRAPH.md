@@ -29,6 +29,15 @@ flowchart LR
 
 ## Task routing graph
 
+Fuel chat campaigns: `fuel-invite-broadcast.ts` and `fuel-digest-broadcast.ts`
+share `fuel-chat-frequency.ts`: rolling 24-hour minimum across both histories,
+with longer `FUEL_INVITE_INTERVAL_HOURS` overrides respected. Shared process
+admission avoids overlapping route bundles; multi-process cron runners must
+also share an external lock. Site and Mini App fuel links are separate actions.
+Both digest branches and invitations use `fuel-campaign-image.ts`, so either
+daily winner attaches the configured `FUEL_INVITE_IMAGE` cover.
+Policy/concurrency checks: `tests/fuel-chat-frequency.test.mjs`.
+
 | Task | Start here | Then inspect |
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |

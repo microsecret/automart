@@ -24,11 +24,12 @@ import { CITY_COORDINATES } from "@/lib/cities"
 import { buildNetworkPrices } from "@/lib/fuel-network-prices"
 import { buildFuelPriceDigestPost } from "@/lib/fuel-price-digest-post"
 import { toCitySlug } from "@/lib/fuel-city-slug"
-import { hasRecentFuelChatPost } from "./fuel-chat-frequency"
+import { hasRecentFuelChatPost, withFuelChatBroadcast } from "./fuel-chat-frequency"
 import { scheduleTelegramMessageCleanup } from "./telegram-message-cleanup"
+import { fuelCampaignImage } from "./fuel-campaign-image"
 
 /**
- * Сводка и приглашение делят общий интервал не менее 72 часов на чат.
+ * Сводка и приглашение делят общий интервал не менее 24 часов на чат.
  */
 
 /**
@@ -55,6 +56,10 @@ export type DigestResult = {
  * бессмысленна, человеку нужен его город.
  */
 export async function broadcastFuelDigest(): Promise<DigestResult> {
+  return withFuelChatBroadcast(runFuelDigest, { chats: 0, sent: 0, skipped: 0, failed: 0 })
+}
+
+async function runFuelDigest(): Promise<DigestResult> {
   const result: DigestResult = { chats: 0, sent: 0, skipped: 0, failed: 0 }
 
   const chats = await prisma.telegramChat.findMany({
@@ -66,6 +71,7 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
   const now = new Date()
   const botUsername = getTelegramBotUsername() ?? undefined
   const siteUrl = absoluteUrl("/")
+  const image = fuelCampaignImage()
   const since = new Date(now.getTime() - WINDOW_MS)
 
   /* Отметки за половину суток разом: по чатам их всё равно разбирать в
@@ -165,7 +171,10 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
 
       const priceMessageId = await sendChatPost(
         chat.id,
-        { photos: [], caption: priceText, buttons: [] },
+        { photos: image ? [image] : [], caption: priceText, buttons: [
+          { text: "🗺 Сравнить цены на сайте", url: absoluteUrl(`/services/fuel-map/${toCitySlug(city)}`) },
+          ...(botUsername ? [{ text: "📱 Карта в Mini App", url: `https://t.me/${botUsername}?startapp=fuel` }] : []),
+        ] },
       )
       if (!priceMessageId) {
         result.failed += 1
@@ -188,7 +197,7 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
 
     const messageId = await sendChatPost(
       chat.id,
-      { photos: [], caption: post.text, buttons: post.buttons },
+      { photos: image ? [image] : [], caption: post.text, buttons: post.buttons },
       { buttonsCaption: "Открыть:" },
     )
 

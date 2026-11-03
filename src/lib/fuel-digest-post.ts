@@ -20,6 +20,17 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
+/** Bound rendered HTML source without splitting an entity or Unicode point. */
+function boundedHtml(value: string, budget: number): string {
+  let result = ""
+  for (const point of value) {
+    const escaped = escapeHtml(point)
+    if (result.length + escaped.length > budget - 1) return `${result}…`
+    result += escaped
+  }
+  return result
+}
+
 export type DigestStation = {
   name: string
   /** Марки, которые есть по свежим отметкам. */
@@ -62,7 +73,7 @@ export const MAX_DIGEST_STATIONS = 5
  */
 export function buildFuelDigest(input: DigestInput): DigestPost {
   const site = input.siteUrl.replace(/\/$/, "")
-  const city = escapeHtml(input.city)
+  const city = boundedHtml(input.city, 100)
 
   const lines: string[] = []
 
@@ -92,8 +103,11 @@ export function buildFuelDigest(input: DigestInput): DigestPost {
         ? `${station.minutesAgo} мин назад`
         : `${Math.floor(station.minutesAgo / 60)} ч назад`
 
-      lines.push(`✅ <b>${escapeHtml(station.name)}</b> — ${escapeHtml(fuels)}${price}`)
-      lines.push(`<i>${age}</i>`)
+      const row = `✅ <b>${boundedHtml(station.name, 80)}</b> — ${boundedHtml(fuels, 55)}${price}`
+      const freshness = `<i>${age}</i>`
+      // Reserve the complete warning/count/share footer; never slice HTML.
+      if (lines.join("\n").length + row.length + freshness.length + 220 > 1024) break
+      lines.push(row, freshness)
     }
 
     lines.push("", "<i>По отметкам водителей. Пока едете, могут разобрать.</i>")
@@ -118,6 +132,7 @@ export function buildFuelDigest(input: DigestInput): DigestPost {
     /* Отметка через бота вторым: человеку за рулём проще прислать точку,
        чем открывать сайт, — но узнаёт он об этом уже после карты. */
     buttons.push({ text: "⛽ Отметить из бота", url: `https://t.me/${input.botUsername}` })
+    buttons.push({ text: "📱 Карта в Mini App", url: `https://t.me/${input.botUsername}?startapp=fuel` })
   }
 
   /* Пост зовёт рассказать знакомым — и не давал этого сделать: человек

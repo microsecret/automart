@@ -76,7 +76,7 @@ export function buildFuelPriceDigestPost(input: PriceDigestInput): string | null
        вроде «медалей» превратили бы цену в игру. */
     const position = `${index + 1}.`
     const stations = `${network.stations} ${plural(network.stations, "заправка", "заправки", "заправок")}`
-    return `${position} <b>${escapeHtml(network.label)}</b> — ${formatRoubles(network.priceRub)} ₽ · ${stations}`
+    return `${position} <b>${boundedHtml(network.label, 70)}</b> — ${formatRoubles(network.priceRub)} ₽ · ${stations}`
   })
 
   /* Разница между первой и последней строкой: ради неё сводку и
@@ -94,13 +94,30 @@ export function buildFuelPriceDigestPost(input: PriceDigestInput): string | null
      прилипала к последней сети. Здесь отсеивается только необязательный
      блок, а пустые строки между блоками ставит `join`. */
   const blocks = [
-    `⛽ <b>${escapeHtml(input.fuelLabel)} в городе ${escapeHtml(input.city)}</b>`,
+    `⛽ <b>${boundedHtml(input.fuelLabel, 30)} в городе ${boundedHtml(input.city, 100)}</b>`,
     lines.join("\n"),
     spreadLine,
-    `<a href="${input.mapUrl}">Все заправки на карте</a>`,
+    // Buttons carry the same destination. Omit an abnormally long inline URL
+    // instead of cutting an HTML attribute or exceeding a photo caption.
+    input.mapUrl.length <= 200 && /^https?:\/\//i.test(input.mapUrl)
+      ? `<a href="${escapeHtml(input.mapUrl).replace(/"/g, "&quot;")}">Все заправки на карте</a>`
+      : "",
   ].filter((block) => block.length > 0)
 
-  return blocks.join("\n\n")
+  const text = blocks.join("\n\n")
+  // Even a short URL can expand substantially when escaped; retain the data
+  // and the external keyboard rather than truncating valid HTML markup.
+  return text.length <= 1024 ? text : blocks.filter(block => !block.startsWith("<a ")).join("\n\n")
+}
+
+function boundedHtml(value: string, budget: number): string {
+  let result = ""
+  for (const point of value) {
+    const escaped = escapeHtml(point)
+    if (result.length + escaped.length > budget - 1) return `${result}…`
+    result += escaped
+  }
+  return result
 }
 
 /* Разметка чужая — названия сетей приходят из источников, и «AMP&CO»
