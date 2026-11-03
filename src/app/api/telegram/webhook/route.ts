@@ -14,12 +14,13 @@ import {
   TelegramIdentityConflictError,
   TelegramRegistrationError,
   telegramApi,
+  telegramPhotoApi,
   type TelegramRegistrationStep,
 } from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
-import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
+import { moderationAuthorizationText, moderationShareUrl } from "@/lib/telegram-moderation-notice"
 import { touchTelegramContact } from "@/lib/telegram-contacts"
 import { setWeeklyDigestOptOut } from "@/lib/telegram-weekly-digest"
 import { WEEKLY_DIGEST_OFF_CALLBACK } from "@/lib/telegram-weekly-digest-message"
@@ -27,6 +28,7 @@ import { absoluteUrl } from "@/lib/site-url"
 import { forwardNoticeText, isChannelForward } from "@/lib/telegram-forward-guard"
 import { rememberUserChat } from "@/lib/listing-chat-autopost"
 import { moderateTelegramBotUpdate } from "@/lib/telegram-bot-admission"
+import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +38,7 @@ type TelegramMessage = {
   text?: string
   caption?: string
   from?: { id: number | string; is_bot?: boolean; first_name?: string; last_name?: string; username?: string }
-  chat: { id: number | string; type: string; title?: string }
+  chat: { id: number | string; type: string; title?: string; username?: string }
   contact?: { phone_number?: string; user_id?: number | string; first_name?: string; last_name?: string }
   photo?: unknown
   video?: unknown
@@ -130,13 +132,14 @@ const VEHICLE_REPORTS_CHAT_URL = "https://t.me/autoproverka"
  * сообщение, чаще всего выбирает машину — ему полезнее увидеть отчёты, чем
  * просто требование зарегистрироваться.
  */
-function registrationKeyboard(registerLabel: string) {
+function registrationKeyboard(chatUsername?: string) {
   const startUrl = getBotStartUrl()
   if (!startUrl) return undefined
   const createUrl = getBotCreateUrl()
+  const shareUrl = moderationShareUrl(chatUsername, getTelegramBotUsername() ?? undefined)
   return {
     inline_keyboard: [
-      [{ text: registerLabel, url: startUrl }],
+      [{ text: "🔐 Пройти авторизацию", url: startUrl }],
       ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
       /* Карта АЗС отдельной кнопкой: в дефицит топлива это самое частое,
          зачем открывают приложение, и человек не должен искать её в меню.
@@ -146,21 +149,33 @@ function registrationKeyboard(registerLabel: string) {
          регистрации бесполезны. */
       [{ text: "⛽ Где есть бензин", url: absoluteUrl("/services/fuel-map?from=telegram") }],
       [{ text: "📋 Отчёты об авто", url: VEHICLE_REPORTS_CHAT_URL }],
+      ...(shareUrl ? [[{ text: "📤 Рассказать другу", url: shareUrl }]] : []),
     ],
   }
 }
 
 function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
-  const displayName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
+  const fullName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
+  let displayName = "", escapedLength = 0
+  // Bound before escaping, preserving complete Unicode points and entities.
+  for (const point of fullName) {
+    const length = escapeTelegramHtml(point).length
+    if (escapedLength + length > 140) { displayName += "…"; break }
+    displayName += point
+    escapedLength += length
+  }
   const mention = `<a href="tg://user?id=${encodeURIComponent(String(from.id))}">${escapeTelegramHtml(displayName)}</a>`
   const username = from.username?.trim().replace(/^@/, "")
-  return username ? `${mention} (@${escapeTelegramHtml(username)})` : mention
+  return username && /^[A-Za-z0-9_]{5,32}$/.test(username) ? `${mention} (@${username})` : mention
 }
 
 /**
  * Системное сообщение бота.
  *
- * Картинка отправляется, только если в окружении задан её file_id. Загружать
+ * Существующая обложка используется по file_id. Для временных уведомлений
+ * модерации TELEGRAM_MODERATION_IMAGE задаёт отдельный файл из /uploads,
+ * который отправляется байтами; при недоступности остаётся прежняя обложка.
+ * Ранее загружать
  * файл при каждой отправке нельзя: с этого сервера выгрузка в Telegram не
  * проходит — проверено на 310 КБ и на 32 КБ, обрывается даже за четыре минуты,
  * хотя обычные запросы идут за две секунды. Из-за этого каждое сообщение
@@ -177,7 +192,27 @@ async function sendBrandedMessage(
   chatId: string,
   text: string,
   replyMarkup?: Record<string, unknown>,
+  moderationNotice = false,
 ) {
+  // Only temporary moderation notices use this cover; private onboarding
+  // retains its existing artwork. Local bytes go directly to Telegram.
+  const moderationImage = moderationNotice ? process.env.TELEGRAM_MODERATION_IMAGE?.trim() : undefined
+  if (moderationImage?.startsWith("/uploads/")) {
+    try {
+      const data = (await readLocalPhotos([moderationImage])).get(moderationImage)
+      if (data) {
+        return await telegramPhotoApi<TelegramSentMessage>({
+          chat_id: chatId, caption: text, parse_mode: "HTML", reply_markup: replyMarkup,
+        }, { uploads: [{ field: "photo", filename: moderationImage.slice(moderationImage.lastIndexOf("/") + 1),
+          contentType: photoMime(moderationImage), data }] })
+      }
+    } catch {
+      // The upload may have been accepted before its response was lost.
+      // Never create a second notice whose ID alone would enter cleanup.
+      console.warn("Telegram moderation cover delivery uncertain; not sending another notice")
+      return null
+    }
+  }
   if (BRANDED_PHOTO_FILE_ID) {
     try {
       return await telegramApi<TelegramSentMessage>("sendPhoto", {
@@ -200,7 +235,8 @@ async function sendBrandedMessage(
   })
 }
 
-async function scheduleTemporarySystemMessage(chatId: string, message: TelegramSentMessage) {
+async function scheduleTemporarySystemMessage(chatId: string, message: TelegramSentMessage | null) {
+  if (!message) return
   try {
     await scheduleTelegramMessageCleanup(chatId, message.message_id)
   } catch (error) {
@@ -469,9 +505,9 @@ async function handleMessage(message: TelegramMessage) {
     else {
       const sentMessage = await telegramApi<TelegramSentMessage>("sendMessage", {
         chat_id: chatId,
-        text: "🔐 <b>Регистрация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и придумайте пароль — после этого доступ к чату откроется автоматически.\n\n⏳ Это системное сообщение исчезнет через 5 минут.",
+        text: "🔐 <b>Авторизация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и задайте пароль — после этого доступ к чату откроется автоматически.\n\n⏳ Это системное сообщение исчезнет через 5 минут.",
         parse_mode: "HTML",
-        reply_markup: registrationKeyboard("🚀 Пройти регистрацию"),
+        reply_markup: registrationKeyboard(message.chat.username),
       })
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
@@ -741,7 +777,8 @@ async function handleMessage(message: TelegramMessage) {
       const sentMessage = await sendBrandedMessage(
         chatId,
         forwardNoticeText(telegramUserMention(message.from)),
-        registrationKeyboard(resumeButtonLabel(pendingStep)),
+        registrationKeyboard(message.chat.username),
+        true,
       )
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
@@ -764,17 +801,9 @@ async function handleMessage(message: TelegramMessage) {
     }
     if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
       const userMention = telegramUserMention(message.from)
-      const sentMessage = await sendBrandedMessage(chatId, [
-        // «Скрыто» вводило в заблуждение: сообщение удалено, а не спрятано.
-        // Дальше сразу объясняем выгоду, а не одно требование.
-        `🗑 <b>${userMention}, ваше сообщение удалено</b>`,
-        "",
-        "Чтобы размещать объявления в чате <b>бесплатно</b>, пройдите быструю регистрацию в боте:",
-        ...describePendingSteps(pendingStep),
-        "",
-        "✅ После регистрации вы сможете снова бесплатно размещать свои объявления в чате.",
-        "⏳ Это уведомление исчезнет через 5 минут.",
-      ].join("\n"), registrationKeyboard(resumeButtonLabel(pendingStep)))
+      const sentMessage = await sendBrandedMessage(chatId,
+        moderationAuthorizationText(userMention, pendingStep),
+        registrationKeyboard(message.chat.username), true)
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
   }

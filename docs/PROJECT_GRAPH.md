@@ -38,6 +38,15 @@ Both digest branches and invitations use `fuel-campaign-image.ts`, so either
 daily winner attaches the configured `FUEL_INVITE_IMAGE` cover.
 Policy/concurrency checks: `tests/fuel-chat-frequency.test.mjs`.
 
+Community growth: existing polling `/api/telegram/marketing` calls
+`telegram-marketing.ts`; durable `TelegramChat.lastPromoAt` CAS admits at most
+one attempt per six hours (longer operator override allowed). Current-chat
+links come only from `getChat`, validated by `telegram-community-post.ts`;
+missing links are skipped without exporting new invites. `COMMUNITY_INVITE_IMAGE`
+selects a local upload. Community messages deliberately have no cleanup; paid
+listing delivery and temporary moderation notices remain separate. Mock audit:
+`tests/telegram-community.test.mjs`.
+
 | Task | Start here | Then inspect |
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
