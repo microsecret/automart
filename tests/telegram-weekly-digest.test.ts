@@ -25,19 +25,23 @@ test("отписка и блокировка останавливают пись
 
 test("после недавнего напоминания письмо ждёт", () => {
   assert.equal(isWeeklyDigestDue({ ...base, lastBroadcastAt: ago(1) }, now), false)
-  assert.equal(isWeeklyDigestDue({ ...base, lastBroadcastAt: ago(4) }, now), true)
+  assert.equal(isWeeklyDigestDue({ ...base, lastBroadcastAt: ago(4) }, now), false)
+  assert.equal(isWeeklyDigestDue({ ...base, lastBroadcastAt: ago(7) }, now), true)
 })
 
-test("кнопки: карта, поделиться личной ссылкой, подача, отписка", () => {
+test("кнопки: автомобиль, запчасть, кабинет, личная ссылка, отписка", () => {
   const message = buildWeeklyDigestMessage({
     inviteUrl: "https://lewheel.ru/services/fuel-map?ref=ABCD1234",
     hasAccount: true,
-    fuelMap: { url: "https://lewheel.ru/services/fuel-map", webApp: false },
+    createPart: { url: "https://lewheel.ru/listings/create/part", webApp: true },
+    dashboard: { url: "https://lewheel.ru/dashboard", webApp: true },
     createListing: { url: "https://lewheel.ru/listings/create/vehicle", webApp: false },
   })
   const buttons = message.reply_markup.inline_keyboard.flat()
-  assert.equal(buttons.length, 4)
-  const share = buttons.find((button) => button.text.includes("Рассказать другу")) as { url: string }
+  assert.equal(buttons.length, 5)
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/listings/create/part")))
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/dashboard")))
+  const share = buttons.find((button) => button.text.includes("Пригласить друга")) as { url: string }
   assert.ok(share.url.startsWith("https://t.me/share/url?url="))
   assert.ok(decodeURIComponent(share.url).includes("ref=ABCD1234"))
   assert.ok(buttons.some((button) => "callback_data" in button && button.callback_data === "digest_off"))
@@ -49,16 +53,17 @@ test("незарегистрированному письмо не мешает 
      письмо всегда успевало первым, и напоминание не уходило никогда. */
   assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(10), registered: false }, now), false)
   assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(34), registered: false }, now), false)
-  /* После пяти недель напоминания кончаются — письмо снова идёт. */
-  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(36), registered: false }, now), true)
+  /* Незавершённой регистрации всегда соответствует своё напоминание. */
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(36), registered: false }, now), false)
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(365), registered: false }, now), false)
   /* Зарегистрированным — как раньше. */
   assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(10), registered: true }, now), true)
 })
 
-test("окно напоминаний в письме совпадает с расписанием напоминаний", async () => {
+test("оба типа приглашений используют одинаковый недельный интервал", async () => {
   // @ts-expect-error Node's strip-types test runner requires the explicit extension.
   const schedule = await import("../src/lib/signup-nudge-schedule.ts")
   // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-  const { SIGNUP_NUDGE_WINDOW_MS } = await import("../src/lib/telegram-weekly-digest-message.ts")
-  assert.equal(SIGNUP_NUDGE_WINDOW_MS, schedule.FIRST_NUDGE_DELAY_MS + schedule.NUDGE_INTERVAL_MS * schedule.MAX_NUDGES)
+  const { WEEKLY_DIGEST_INTERVAL_MS } = await import("../src/lib/telegram-weekly-digest-message.ts")
+  assert.equal(WEEKLY_DIGEST_INTERVAL_MS, schedule.NUDGE_INTERVAL_MS)
 })

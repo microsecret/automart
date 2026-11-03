@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { MAX_NUDGES, NUDGE_VARIANTS, nudgeIndex, nudgeText } from "../src/lib/signup-nudge-schedule.ts"
+import { NUDGE_VARIANTS, nudgeIndex, nudgeText } from "../src/lib/signup-nudge-schedule.ts"
 
 const DAY = 24 * 60 * 60 * 1000
 const NOW = new Date("2026-08-23T12:00:00Z")
@@ -30,11 +30,10 @@ test("дальше — тем же шагом в неделю", () => {
   assert.equal(nudgeIndex(daysAgo(28), NOW), 3)
 })
 
-test("после четырёх напоминаний бот замолкает навсегда", () => {
-  // Месяц — достаточный срок, чтобы человек решил. Дальше письма
-  // кончаются блокировкой бота, а заблокировавший потерян насовсем.
-  assert.equal(nudgeIndex(daysAgo(40), NOW), -1)
-  assert.equal(nudgeIndex(daysAgo(365), NOW), -1)
+test("после месяца и года еженедельные напоминания продолжаются", () => {
+  assert.equal(nudgeIndex(daysAgo(35), NOW), 0)
+  assert.equal(nudgeIndex(daysAgo(40), NOW), 0)
+  assert.ok(nudgeIndex(daysAgo(365), NOW) >= 0)
 })
 
 test("дата из будущего не даёт напоминания", () => {
@@ -43,10 +42,13 @@ test("дата из будущего не даёт напоминания", () =
   assert.equal(nudgeIndex(future, NOW), -1)
 })
 
-test("текстов ровно столько, сколько напоминаний", () => {
-  // Иначе на последнем шаге рассылка обратилась бы к несуществующему
-  // тексту и отправила пустое сообщение.
-  assert.equal(NUDGE_VARIANTS.length, MAX_NUDGES)
+test("варианты чередуются без пустых сообщений и обещания замолчать", () => {
+  for (let day = 7; day < 1000; day += 7) {
+    const text = nudgeText(nudgeIndex(daysAgo(day), NOW))
+    assert.ok(text.length > 0 && text.length < 1024)
+    assert.doesNotMatch(text, /Последнее напоминание|Больше беспокоить не будем/)
+  }
+  assert.equal(NUDGE_VARIANTS.length, 4)
 })
 
 test("имя подставляется только в первое напоминание", () => {
@@ -98,13 +100,13 @@ test("рассылка не быстрее пяти сообщений в сек
      Пауза выдерживается и после неудачной отправки: раньше на блокировке
      стоял continue, и цепочка блокировок пролетала без задержки — именно
      тот случай, когда лимит и срабатывает. */
-  const nudge = readFileSync(new URL("../src/lib/telegram-signup-nudge.ts", import.meta.url), "utf8")
+  const nudge = readFileSync(new URL("../src/lib/telegram-lifecycle-campaign.ts", import.meta.url), "utf8")
 
-  assert.match(nudge, /const MESSAGES_PER_SECOND = 5/)
-  assert.match(nudge, /Date\.now\(\) - sendStartedAt/)
+  assert.match(nudge, /const SEND_INTERVAL_MS = 200/)
+  assert.match(nudge, /Date\.now\(\) - started/)
   /* Раньше на блокировке стоял continue, и цепочка блокировок пролетала
      без задержки — именно тот случай, когда лимит и срабатывает. */
-  assert.match(nudge, /Пауза выдерживается и после неудачи/)
+  assert.match(nudge, /finally/)
 })
 
 test("напоминание зовёт зарегистрироваться и называет чат города", () => {

@@ -12,7 +12,7 @@ type WeeklyDigestSummary = {
   optedOut: number
   blocked: number
   sentLast7d: number
-  dueToday: number
+  dueInNextBatch: number
 }
 
 /**
@@ -20,7 +20,7 @@ type WeeklyDigestSummary = {
  *
  * Письмо уходит само, раз в неделю каждому, кто нажал «Старт». Здесь видно,
  * сколько людей его получают, сколько отписались кнопкой «Не присылать» и
- * сколько получат сегодня; «Прислать мне» отправляет ровно то письмо, что
+ * сколько ждут в ближайшей пачке; «Прислать мне» отправляет пример продавцу,
  * увидит человек, с вашей личной ссылкой.
  */
 export default function WeeklyDigestPanel() {
@@ -48,8 +48,8 @@ export default function WeeklyDigestPanel() {
             <div>
               <Text fw={700}>Еженедельное письмо в боте</Text>
               <Text size="sm" c="dimmed">
-                Карта АЗС, отметки о дефиците, бесплатная подача и личная ссылка «Рассказать другу». Раз в неделю каждому,
-                первое — через неделю после «Старта». Отписка — кнопкой «Не присылать» или /digest_off.
+                Обложка и напоминание завершить регистрацию; после регистрации — приглашение разместить автомобиль или запчасть.
+                Раз в семь дней, первое — через неделю после «Старта». Отписка — кнопкой «Не присылать» или /digest_off.
               </Text>
             </div>
           </Group>
@@ -61,9 +61,9 @@ export default function WeeklyDigestPanel() {
           <Text size="sm" c="var(--market-danger-text)">Сводка не загрузилась</Text>
         ) : (
           <Group gap="xs">
-            <Badge variant="light" color="indigo">Получают: {data?.subscribed ?? "—"}</Badge>
+            <Badge variant="light" color="indigo">Контактов без отписки: {data?.subscribed ?? "—"}</Badge>
             <Badge variant="light" color="indigo">Ушло за неделю: {data?.sentLast7d ?? "—"}</Badge>
-            <Badge variant="light" color="indigo">Сегодня по графику: {data?.dueToday ?? "—"}</Badge>
+            <Badge variant="light" color="indigo">В ближайшей пачке: {data?.dueInNextBatch ?? "—"}</Badge>
             <Badge variant="light" color="gray">Отписались: {data?.optedOut ?? "—"}</Badge>
             <Badge variant="light" color="gray">Заблокировали бота: {data?.blocked ?? "—"}</Badge>
           </Group>

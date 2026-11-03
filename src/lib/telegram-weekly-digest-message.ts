@@ -1,38 +1,8 @@
-/**
- * Еженедельное письмо в боте: текст, кнопки и правило «кому пора».
- *
- * Здесь нет базы и сети — только решения, чтобы их можно было проверить
- * тестом. Отправка — в telegram-weekly-digest.ts.
- *
- * Каждое утверждение в тексте опирается на то, что площадка делает сейчас:
- * карта АЗС обновляется сборщиком каждые пятнадцать минут, отметки цены и
- * наличия видны всем водителям города, объявление бесплатно, партнёр
- * получает от 20% с платных объявлений приглашённых (стартовый уровень
- * REFERRAL_TIERS).
- */
-
+/** One weekly lifecycle invitation; incomplete registrations use their own copy. */
 export const WEEKLY_DIGEST_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000
-/** Новичку первое письмо — не раньше чем через неделю после «Старта». */
 export const WEEKLY_DIGEST_FIRST_DELAY_MS = WEEKLY_DIGEST_INTERVAL_MS
-/** Если бот писал человеку недавно (напоминание о регистрации), письмо ждёт. */
-export const WEEKLY_DIGEST_QUIET_MS = 3 * 24 * 60 * 60 * 1000
+export const WEEKLY_DIGEST_QUIET_MS = WEEKLY_DIGEST_INTERVAL_MS
 export const WEEKLY_DIGEST_OFF_CALLBACK = "digest_off"
-
-/**
- * Пять недель после «Старта» незарегистрированному человеку пишут
- * напоминания о регистрации (signup-nudge-schedule: первое через неделю,
- * дальше раз в неделю, четыре штуки). Письмо в это время молчит.
- *
- * Оба шли с шагом в неделю и делили одну отметку lastBroadcastAt, но
- * письмо уходит в 08:05, а напоминание в 12:20: письмо каждый раз
- * успевало первым, и до напоминания очередь не доходила никогда. Человек,
- * которому нужнее всего «зарегистрируйтесь — это бесплатно», получал
- * дайджест цен на бензин. Замечено 28.10.2026.
- *
- * Число повторено здесь, а не импортировано: модуль проверяется тестом
- * без сборки и держится без зависимостей. Тест сверяет его с расписанием.
- */
-export const SIGNUP_NUDGE_WINDOW_MS = 5 * 7 * 24 * 60 * 60 * 1000
 
 export type WeeklyDigestContact = {
   blocked: boolean
@@ -40,73 +10,43 @@ export type WeeklyDigestContact = {
   startedAt: Date
   lastWeeklyAt: Date | null
   lastBroadcastAt: Date | null
-  /** Завёл ли аккаунт; не передан — считается зарегистрированным. */
   registered?: boolean
 }
 
-/** Пора ли слать письмо этому человеку. */
 export function isWeeklyDigestDue(contact: WeeklyDigestContact, now: Date): boolean {
-  if (contact.blocked || contact.weeklyOptOut) return false
+  if (contact.blocked || contact.weeklyOptOut || contact.registered === false) return false
   const time = now.getTime()
-  if (time - contact.startedAt.getTime() < WEEKLY_DIGEST_FIRST_DELAY_MS) return false
-  if (contact.registered === false && time - contact.startedAt.getTime() < SIGNUP_NUDGE_WINDOW_MS) return false
-  if (contact.lastWeeklyAt && time - contact.lastWeeklyAt.getTime() < WEEKLY_DIGEST_INTERVAL_MS) return false
-  if (contact.lastBroadcastAt && time - contact.lastBroadcastAt.getTime() < WEEKLY_DIGEST_QUIET_MS) return false
-  return true
+  return [contact.startedAt, contact.lastWeeklyAt, contact.lastBroadcastAt]
+    .every((date) => date === null || (Number.isFinite(time - date.getTime()) && time - date.getTime() >= WEEKLY_DIGEST_INTERVAL_MS))
 }
 
-type InlineButton =
-  | { text: string; url: string }
-  | { text: string; web_app: { url: string } }
-  | { text: string; callback_data: string }
-
-export type WeeklyDigestMessage = {
-  text: string
-  reply_markup: { inline_keyboard: InlineButton[][] }
-}
+type Target = { url: string; webApp: boolean }
+type InlineButton = { text: string; url: string } | { text: string; web_app: { url: string } } | { text: string; callback_data: string }
+export type WeeklyDigestMessage = { text: string; reply_markup: { inline_keyboard: InlineButton[][] } }
 
 export function buildWeeklyDigestMessage(input: {
-  /** Личная ссылка с кодом приглашения. */
   inviteUrl: string
-  /** Есть ли у человека аккаунт: без него вознаграждение пока не копится. */
   hasAccount: boolean
-  /** Карта АЗС: мини-приложение, если настроено, иначе сайт. */
-  fuelMap: { url: string; webApp: boolean }
-  createListing: { url: string; webApp: boolean }
+  createListing: Target
+  createPart: Target
+  dashboard: Target
 }): WeeklyDigestMessage {
-  const invite = input.hasAccount
-    ? "🤝 <b>Расскажите другу.</b> По вашей личной ссылке вам начисляется от 20% с его платных объявлений."
-    : "🤝 <b>Расскажите другу</b> по вашей личной ссылке. Войдите на сайт через Telegram — и с платных объявлений приглашённых вам начнёт начисляться от 20%."
-
   const text = [
-    "🚗 <b>LeWheel: коротко о главном</b>",
-    "",
-    "⛽ <b>Где заправиться.</b> Карта АЗС с ценами и наличием топлива обновляется каждые 15 минут.",
-    "",
-    "📍 <b>Помогите соседям.</b> Нет бензина или на табло другая цена — отметьте на карте. Водители города сразу увидят, где дефицит.",
-    "",
-    "🚘 <b>Продаёте машину?</b> Объявление на LeWheel бесплатно.",
-    "",
-    invite,
-    "",
-    "<i>Пишем раз в неделю. Не нужно — нажмите «Не присылать».</i>",
+    "🚘 <b>Продаёте автомобиль или запчасти? Покажите их на LeWheel</b>", "",
+    "Добавьте фотографии, цену, характеристики и контакты. После модерации покупатели смогут увидеть предложение и написать вам.", "",
+    "✅ Базовое размещение на сайте бесплатно.",
+    "📱 Создание и управление объявлениями — в мини-приложении Telegram.",
+    "💬 Для автомобилей доступна публикация в чатах авторынка; повторные размещения подключаются отдельно в продвижении.", "",
+    input.hasAccount ? "🤝 Пригласите друзей по личной ссылке — получайте вознаграждение по условиям партнёрской программы." : "Завершите регистрацию, чтобы размещать свои предложения.", "",
+    "<i>Одно приглашение в неделю. Отключить — кнопкой ниже.</i>",
   ].join("\n")
-
-  const shareText = "⛽ Цены на бензин и наличие топлива на заправках рядом — карта обновляется каждые 15 минут."
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(input.inviteUrl)}&text=${encodeURIComponent(shareText)}`
-
-  const open = (text: string, target: { url: string; webApp: boolean }): InlineButton =>
-    target.webApp ? { text, web_app: { url: target.url } } : { text, url: target.url }
-
-  return {
-    text,
-    reply_markup: {
-      inline_keyboard: [
-        [open("⛽ Карта АЗС", input.fuelMap)],
-        [{ text: "🤝 Рассказать другу", url: shareUrl }],
-        [open("➕ Подать объявление", input.createListing)],
-        [{ text: "🔕 Не присылать", callback_data: WEEKLY_DIGEST_OFF_CALLBACK }],
-      ],
-    },
-  }
+  const open = (text: string, target: Target): InlineButton => target.webApp
+    ? { text, web_app: { url: target.url } } : { text, url: target.url }
+  return { text, reply_markup: { inline_keyboard: [
+    [open("🚘 Разместить автомобиль", input.createListing)],
+    [open("🔧 Разместить запчасть", input.createPart)],
+    [open("📋 Мои объявления и продвижение", input.dashboard)],
+    [{ text: "🤝 Пригласить друга", url: `https://t.me/share/url?url=${encodeURIComponent(input.inviteUrl)}&text=${encodeURIComponent("LeWheel — автомобили и запчасти в Telegram")}` }],
+    [{ text: "🔕 Не присылать", callback_data: WEEKLY_DIGEST_OFF_CALLBACK }],
+  ] } }
 }

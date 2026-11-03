@@ -12,7 +12,7 @@ export async function GET() {
   if (guard.denied) return guard.denied
   try {
     const [stats, plan] = await Promise.all([getWeeklyDigestStats(), processWeeklyDigest({ dryRun: true })])
-    return NextResponse.json({ ...stats, dueToday: plan.due })
+    return NextResponse.json({ ...stats, dueInNextBatch: plan.due })
   } catch (error) {
     console.error("Weekly digest stats failed:", error)
     return NextResponse.json({ error: "Не удалось загрузить сводку" }, { status: 500 })
