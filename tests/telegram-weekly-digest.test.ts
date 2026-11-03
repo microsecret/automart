@@ -36,11 +36,15 @@ test("кнопки: автомобиль, запчасть, кабинет, ли
     createPart: { url: "https://lewheel.ru/listings/create/part", webApp: true },
     dashboard: { url: "https://lewheel.ru/dashboard", webApp: true },
     createListing: { url: "https://lewheel.ru/listings/create/vehicle", webApp: false },
+    createWebsite: "https://lewheel.ru/listings/create/vehicle",
+    promotions: { url: "https://lewheel.ru/telegram?start=payments&from=telegram", webApp: true },
   })
   const buttons = message.reply_markup.inline_keyboard.flat()
-  assert.equal(buttons.length, 5)
+  assert.equal(buttons.length, 7)
   assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/listings/create/part")))
   assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/dashboard")))
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.includes("start=payments")))
+  assert.ok(buttons.some((button) => "url" in button && button.text.includes("Подать на сайте") && button.url === "https://lewheel.ru/listings/create/vehicle"))
   const share = buttons.find((button) => button.text.includes("Пригласить друга")) as { url: string }
   assert.ok(share.url.startsWith("https://t.me/share/url?url="))
   assert.ok(decodeURIComponent(share.url).includes("ref=ABCD1234"))

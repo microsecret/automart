@@ -21,7 +21,7 @@ const now = new Date("2026-11-03T12:00:00Z")
 const ago = (days) => new Date(+now - days * DAY)
 const complete = { accountStatus: "ACTIVE", phone: "+70000000000", telegramVerifiedAt: ago(30), email: "test@example.test", emailVerified: ago(30), hashedPassword: "$2b$12$test" }
 
-async function fixture({ contact: extra = {}, user = null, failure = null, onClaim } = {}) {
+async function fixture({ contact: extra = {}, user = null, failure = null, onClaim, waveActive = () => false } = {}) {
   const state = { telegramId: "101", firstName: "<Test>", startedAt: ago(365), lastBroadcastAt: null, lastWeeklyAt: null, blocked: false, weeklyOptOut: false, registered: false, ...extra }
   const sends = []
   let writes = 0
@@ -48,17 +48,27 @@ async function fixture({ contact: extra = {}, user = null, failure = null, onCla
     getTelegramBotUsername: () => "lewheelbot",
     getTelegramMiniAppUrl: () => "https://lewheel.ru/telegram",
     getTelegramRegistrationStep,
+    isTelegramCampaignWaveActive: waveActive,
     markTelegramContactBlocked: async () => { state.blocked = true },
     buildWeeklyDigestFor: async () => ({ text: "Seller invitation", reply_markup: { inline_keyboard: [] } }),
     sendTelegramCampaignPhoto: async (...args) => { sends.push(args); if (failure) throw new Error(failure) },
   }
-  const shim = encode(`export const {prisma,getTelegramBotUsername,getTelegramMiniAppUrl,getTelegramRegistrationStep,markTelegramContactBlocked,buildWeeklyDigestFor,sendTelegramCampaignPhoto}=globalThis[${JSON.stringify(key)}]`)
+  const shim = encode(`export const {prisma,getTelegramBotUsername,getTelegramMiniAppUrl,getTelegramRegistrationStep,markTelegramContactBlocked,buildWeeklyDigestFor,sendTelegramCampaignPhoto,isTelegramCampaignWaveActive}=globalThis[${JSON.stringify(key)}]`)
   const worker = compile("../src/lib/telegram-lifecycle-campaign.ts").replace(/from "(@\/lib\/[^"]+)"/g, (_match, name) => `from ${JSON.stringify(name.endsWith("signup-nudge-schedule") ? scheduleUrl : name.endsWith("telegram-weekly-digest-message") ? weeklyUrl : shim)}`)
   const { processTelegramLifecycle: run } = await import(encode(worker))
   return { state, sends, run: (options = {}) => run({ now, ...options }), writes: () => writes, dispose: () => { delete globalThis[key] } }
 }
 
 test("weekly lifecycle policy and durable claims", async (t) => {
+  await t.test("an active live wave pauses regular workers without writes", async () => {
+    const f = await fixture({ waveActive: () => true })
+    try { assert.equal((await f.run()).pausedForWave, true); assert.equal(f.writes(), 0); assert.equal(f.sends.length, 0) } finally { f.dispose() }
+  })
+  await t.test("wave starting after claim releases unsent attempt", async () => {
+    let active = false
+    const f = await fixture({ waveActive: () => active, onClaim: () => { active = true } })
+    try { assert.equal((await f.run()).sent, 0); assert.equal(f.state.lastBroadcastAt, null); assert.equal(f.sends.length, 0) } finally { f.dispose() }
+  })
   await t.test("year-old incomplete contact receives photo, escaped text and resume/mini-app/opt-out buttons", async () => {
     const f = await fixture()
     try {

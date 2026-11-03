@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { getOwnerTransition, isListingModerator, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { parseListingEditInput, parseStoredImages } from "@/lib/listing-edit"
@@ -44,8 +45,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Войдите, чтобы увидеть телефон продавца" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const userLimit = rateLimit(`listing:contact:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: 20 })
     const ipLimit = rateLimit(`listing:contact:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 60 })

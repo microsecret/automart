@@ -44,6 +44,11 @@ test("параметр берётся и из адреса страницы", ()
   /* В браузере мини-приложение открывается обычной ссылкой: там
      start_param приходит в адресе, а не в initData. */
   assert.ok(resolveStartRoute("", "?start=fuel")?.includes("/services/fuel-map"))
+  assert.equal(resolveStartRoute("", "?start=create"), "/listings/create/vehicle?source=telegram")
+  assert.equal(resolveStartRoute("", "?start=createpart"), "/listings/create/part?from=telegram")
+  assert.equal(resolveStartRoute("", "?start=payments"), "/dashboard?tab=payments&from=telegram")
+  assert.equal(resolveStartRoute("", "?start=dashboard"), "/dashboard?from=telegram")
+  assert.equal(resolveStartRoute("", "?start=https://evil.example"), null)
 })
 
 test("без параметра никуда не уводим", () => {

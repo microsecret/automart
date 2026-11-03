@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
 import useSWR from "swr"
-import { Avatar, Badge, Box, Loader, Stack, Text } from "@mantine/core"
-import { fetchJson } from "@/lib/api-client"
+import { useDebouncedValue } from "@mantine/hooks"
+import { ActionIcon, Avatar, Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { IconChevronLeft, IconChevronRight, IconSearch, IconX } from "@tabler/icons-react"
+import { ApiClientError, fetchJson } from "@/lib/api-client"
 
 /**
  * Переписка с продавцами в приложении.
@@ -17,56 +20,142 @@ type Conversation = {
   id: string
   otherUser: { id: string; name: string | null; image: string | null }
   listing: { id: string; title: string } | null
-  lastMessage: { content: string; createdAt: string; senderId: string; isRead: boolean } | null
+  lastMessage: { content: string; createdAt: string; senderId: string; isRead: boolean; attachmentCount: number } | null
   unreadCount: number
 }
 
-type MessagesResponse = { conversations: Conversation[] }
+type MessagesResponse = {
+  conversations: Conversation[]
+  pagination: { page: number; pages: number; total: number }
+}
+
+const PAGE_SIZE = 30
+const MAX_PAGE = 10_000
 
 export default function TelegramMessages() {
-  const { data, isLoading, error } = useSWR<MessagesResponse>("/api/messages?limit=30", fetchJson, {
-    revalidateOnFocus: false,
+  const [page, setPage] = useState(1)
+  const [query, setQuery] = useState("")
+  const [debouncedQuery] = useDebouncedValue(query.trim(), 300)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) })
+  if (debouncedQuery) params.set("q", debouncedQuery)
+  const { data, isLoading, isValidating, error, mutate } = useSWR<MessagesResponse>(`/api/messages?${params}`, fetchJson, {
+    revalidateOnFocus: true,
+    refreshInterval: 20_000,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+    keepPreviousData: true,
+    errorRetryCount: 2,
+    shouldRetryOnError: (failure) => !(failure instanceof ApiClientError && (failure.status === 401 || failure.status === 403)),
   })
+  const conversations = data?.conversations ?? []
+  const totalPages = Math.min(MAX_PAGE, Math.max(1, data?.pagination.pages ?? 1))
+  const searching = Boolean(debouncedQuery)
+  const unauthorized = error instanceof ApiClientError && error.status === 401
+  const forbidden = error instanceof ApiClientError && error.status === 403
+  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "")
+  const signInHref = bot && /^[A-Za-z0-9_]{5,}$/.test(bot)
+    ? `https://t.me/${bot}?start=register`
+    : "/auth/signin?from=telegram&callbackUrl=%2Ftelegram%3Ftab%3Dchats"
 
-  if (isLoading) {
-    return (
-      <Stack align="center" py={48} gap="xs">
-        <Loader size="sm" color="var(--tg-accent)" />
-        <Text size="xs" c="var(--tg-hint)">Загружаем переписку…</Text>
-      </Stack>
-    )
+  useEffect(() => {
+    if (data && !isValidating && page > totalPages) setPage(totalPages)
+  }, [data, isValidating, page, totalPages])
+
+  const clearSearch = () => {
+    setQuery("")
+    setPage(1)
+    searchRef.current?.focus()
   }
 
-  /* Не вошёл — не ошибка, а обычное состояние: смотреть машины можно без
-     аккаунта, и попадать сюда человек будет до входа. */
-  if (error) {
+  // An expired session needs sign-in; service and network failures need retry.
+  if (unauthorized) {
     return (
       <Stack align="center" py={48} gap={6}>
         <Text fw={700} c="var(--tg-text)">Войдите, чтобы читать переписку</Text>
         <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
           Сообщения от продавцов приходят в аккаунт. Регистрация проходит в боте за минуту.
         </Text>
-      </Stack>
-    )
-  }
-
-  const conversations = data?.conversations || []
-  if (!conversations.length) {
-    return (
-      <Stack align="center" py={48} gap={6}>
-        <Text fw={700} c="var(--tg-text)">Переписки пока нет</Text>
-        <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
-          Напишите продавцу с карточки машины — разговор появится здесь.
-        </Text>
+        <Button component={Link} href={signInHref} className="tg-button" mt="sm">
+          {bot ? "Войти через бота" : "Войти в аккаунт"}
+        </Button>
       </Stack>
     )
   }
 
   return (
-    <Stack gap={2} pb={8}>
-      {conversations.map((conversation) => (
-        <ConversationRow key={conversation.id} conversation={conversation} />
-      ))}
+    <Stack gap="sm" pb={8}>
+      <Box className="tg-search">
+        <TextInput
+          ref={searchRef}
+          className="tg-search__input"
+          aria-label="Поиск по всем диалогам"
+          placeholder="Собеседник, объявление или сообщение"
+          type="search"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={120}
+          leftSection={<IconSearch size={16} aria-hidden="true" />}
+          rightSectionWidth={query ? 48 : 32}
+          rightSection={query ? (
+            <ActionIcon size={44} variant="subtle" color="var(--tg-accent)" onClick={clearSearch} aria-label="Очистить поиск диалогов">
+              <IconX size={16} aria-hidden="true" />
+            </ActionIcon>
+          ) : null}
+          value={query}
+          onChange={(event) => { setQuery(event.currentTarget.value); setPage(1) }}
+        />
+      </Box>
+
+      {isLoading && !data ? (
+        <Stack align="center" py={48} gap="xs" role="status">
+          <Loader size="sm" color="var(--tg-accent)" />
+          <Text size="xs" c="var(--tg-hint)">Загружаем переписку…</Text>
+        </Stack>
+      ) : error ? (
+        <Stack align="center" py={48} px="md" gap="sm">
+          <Text fw={700} c="var(--tg-text)" ta="center" role="alert">
+            {forbidden ? "Доступ к переписке ограничен" : "Не удалось загрузить переписку"}
+          </Text>
+          <Text size="xs" c="var(--tg-hint)" ta="center" maw={290}>
+            {forbidden ? "Проверьте статус аккаунта или обратитесь в поддержку." : "Проверьте связь и повторите запрос. Ваши диалоги сохранены."}
+          </Text>
+          <Button className="tg-button" onClick={() => void mutate()} loading={isValidating}>Повторить</Button>
+        </Stack>
+      ) : (
+        <>
+          <Group justify="space-between" px="md" gap="xs" mih={24}>
+            <Text size="xs" c="var(--tg-hint)" role="status" aria-live="polite">
+              {searching ? `Найдено диалогов: ${data?.pagination.total ?? 0}` : `Всего диалогов: ${data?.pagination.total ?? 0}`}
+            </Text>
+            {isValidating && <Loader size={16} color="var(--tg-accent)" aria-label="Обновляем диалоги" />}
+          </Group>
+          {conversations.length ? (
+            <Stack gap={2} aria-busy={isValidating}>
+              {conversations.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} />)}
+            </Stack>
+          ) : (
+            <Stack align="center" py={48} px="md" gap={6}>
+              <Text fw={700} c="var(--tg-text)">{searching ? "Ничего не найдено" : "Переписки пока нет"}</Text>
+              <Text size="xs" c="var(--tg-hint)" ta="center" maw={290}>
+                {searching ? "Попробуйте другое имя, название объявления или текст сообщения." : "Напишите продавцу с карточки машины — разговор появится здесь."}
+              </Text>
+              {searching && <Button variant="subtle" color="var(--tg-accent)" onClick={clearSearch}>Сбросить поиск</Button>}
+            </Stack>
+          )}
+          {totalPages > 1 && (
+            <Group justify="space-between" px="md" gap="xs" wrap="nowrap" aria-label="Страницы диалогов">
+              <ActionIcon size={44} variant="light" color="var(--tg-accent)" disabled={page <= 1 || isValidating} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="Предыдущая страница диалогов">
+                <IconChevronLeft size={20} aria-hidden="true" />
+              </ActionIcon>
+              <Text size="sm" c="var(--tg-text)">Страница {page} из {totalPages}</Text>
+              <ActionIcon size={44} variant="light" color="var(--tg-accent)" disabled={page >= totalPages || isValidating} onClick={() => setPage((value) => Math.min(totalPages, MAX_PAGE, value + 1))} aria-label="Следующая страница диалогов">
+                <IconChevronRight size={20} aria-hidden="true" />
+              </ActionIcon>
+            </Group>
+          )}
+        </>
+      )}
     </Stack>
   )
 }
@@ -74,7 +163,7 @@ export default function TelegramMessages() {
 function ConversationRow({ conversation }: { conversation: Conversation }) {
   const tap = () => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
   const name = conversation.otherUser.name || "Пользователь"
-  const preview = conversation.lastMessage?.content || "Нет сообщений"
+  const preview = conversation.lastMessage?.content || (conversation.lastMessage?.attachmentCount ? `Фото: ${conversation.lastMessage.attachmentCount}` : "Нет сообщений")
 
   return (
     <Box

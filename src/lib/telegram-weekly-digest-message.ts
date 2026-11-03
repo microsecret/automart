@@ -28,8 +28,10 @@ export function buildWeeklyDigestMessage(input: {
   inviteUrl: string
   hasAccount: boolean
   createListing: Target
+  createWebsite: string
   createPart: Target
   dashboard: Target
+  promotions: Target
 }): WeeklyDigestMessage {
   const text = [
     "🚘 <b>Продаёте автомобиль или запчасти? Покажите их на LeWheel</b>", "",
@@ -43,9 +45,10 @@ export function buildWeeklyDigestMessage(input: {
   const open = (text: string, target: Target): InlineButton => target.webApp
     ? { text, web_app: { url: target.url } } : { text, url: target.url }
   return { text, reply_markup: { inline_keyboard: [
-    [open("🚘 Разместить автомобиль", input.createListing)],
+    [open("📱 Подать авто", input.createListing), { text: "🌐 Подать на сайте", url: input.createWebsite }],
     [open("🔧 Разместить запчасть", input.createPart)],
-    [open("📋 Мои объявления и продвижение", input.dashboard)],
+    [open("🚀 Тарифы и продвижение", input.promotions)],
+    [open("📋 Мои объявления", input.dashboard)],
     [{ text: "🤝 Пригласить друга", url: `https://t.me/share/url?url=${encodeURIComponent(input.inviteUrl)}&text=${encodeURIComponent("LeWheel — автомобили и запчасти в Telegram")}` }],
     [{ text: "🔕 Не присылать", callback_data: WEEKLY_DIGEST_OFF_CALLBACK }],
   ] } }

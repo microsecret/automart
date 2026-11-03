@@ -4,8 +4,7 @@ import { writeFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
 import sharp from "sharp"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { hasExpectedFileSignature } from "@/lib/file-signature"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
@@ -19,8 +18,9 @@ const MAX_MULTIPART_BYTES = MAX_FILE_BYTES + 1024 * 1024
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     /* Продавец заводит каталог: десятки позиций по нескольку фото за час.
        Двенадцать загрузок в час хватает частнику на объявление, но не

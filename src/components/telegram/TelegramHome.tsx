@@ -22,6 +22,7 @@ type Story = { key: string; label: string; href: string; image: string; signedOn
 const STORIES: readonly Story[] = [
   { key: "auctions", label: "Аукционы", href: "/telegram?tab=auctions", image: "auctions" },
   { key: "sell", label: "Продать", href: `${CREATE_VEHICLE_HREF}?source=telegram`, image: "sell", signedOnly: true },
+  { key: "promotions", label: "Продвижение", href: "/dashboard?tab=payments&from=telegram", image: "/images/ui/navigation-v1/wallet-96.webp", signedOnly: true },
   { key: "parts", label: "Запчасти", href: "/catalogs?from=telegram", image: "parts" },
   { key: "fuel", label: "Заправки", href: "/services/fuel-map?from=telegram", image: "fuel" },
   { key: "history", label: "Проверка", href: "/services/history-check?from=telegram", image: "history" },
@@ -37,6 +38,7 @@ type Promo = { key: string; title: string; text: string; action: string; href: s
 const PROMOS: readonly Promo[] = [
   { key: "auctions", title: "Авто из Кореи, Японии и Китая", text: "Цена лота с комиссией и расчёт под ключ", action: "Смотреть лоты", href: "/telegram?tab=auctions", scene: "auctions", tone: "teal" },
   { key: "sell", title: "Продайте машину здесь", text: "Объявление бесплатно, покупатели из Telegram и с сайта", action: "Разместить", href: `${CREATE_VEHICLE_HREF}?source=telegram`, scene: "sell", tone: "amber", signedOnly: true },
+  { key: "promotions", title: "Продвижение объявления", text: "Тарифы, размещения и история оплат в вашем кабинете", action: "Открыть тарифы", href: "/dashboard?tab=payments&from=telegram", scene: "payments", tone: "teal", signedOnly: true },
   { key: "parts", title: "Запчасти по марке и VIN", text: "Каталоги производителей и магазины", action: "Открыть каталоги", href: "/catalogs?from=telegram", scene: "part-engine", tone: "blue" },
   { key: "fuel", title: "Цены на АЗС рядом", text: "Карта заправок с актуальными ценами", action: "Открыть карту", href: "/services/fuel-map?from=telegram", scene: "fuel", tone: "coral" },
 ]
@@ -64,7 +66,7 @@ export default function TelegramHome({ signedIn, botUsername }: { signedIn: bool
           >
             <span className="tg-story__ring">
               {/* eslint-disable-next-line @next/next/no-img-element -- обложка 176 пикселей уже нарезана */}
-              <img src={`/images/telegram/story-${story.image}-176.webp`} width={64} height={64} alt="" aria-hidden="true" decoding="async" />
+              <img src={story.image.startsWith("/") ? story.image : `/images/telegram/story-${story.image}-176.webp`} width={64} height={64} alt="" aria-hidden="true" decoding="async" />
             </span>
             <span className="tg-story__label">{story.label}</span>
           </Link>

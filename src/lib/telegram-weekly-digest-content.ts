@@ -22,7 +22,11 @@ export async function buildWeeklyDigestFor(telegramId: string) {
   }
   return buildWeeklyDigestMessage({
     inviteUrl: `${site}/?ref=${encodeURIComponent(code)}`, hasAccount,
-    createListing: target(CREATE_VEHICLE_HREF),
-    createPart: target("/listings/create/part"), dashboard: target("/dashboard"),
+    // Enter via the public Mini App shell first, so a fresh WebView signs in
+    // before it reaches middleware-protected creation/account pages.
+    createListing: target("/telegram?start=create"),
+    createWebsite: `${site}${CREATE_VEHICLE_HREF}`,
+    createPart: target("/telegram?start=createpart"), dashboard: target("/telegram?start=dashboard"),
+    promotions: target("/telegram?start=payments"),
   })
 }

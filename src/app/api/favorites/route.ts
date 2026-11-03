@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
 
@@ -14,13 +13,9 @@ function currentUserFavoritesWhere(userId: string) {
 // GET all favorite listings for the current user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: "Необходимо войти в аккаунт" },
-        { status: 401 }
-      )
-    }
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const { searchParams } = new URL(request.url)
 
@@ -111,13 +106,9 @@ export async function GET(request: NextRequest) {
 // POST add a listing to favorites
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: "Необходимо войти в аккаунт" },
-        { status: 401 }
-      )
-    }
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const body = await request.json()
     const { listingId } = body
@@ -190,13 +181,9 @@ export async function POST(request: NextRequest) {
 // DELETE remove a listing from favorites
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: "Необходимо войти в аккаунт" },
-        { status: 401 }
-      )
-    }
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const { searchParams } = new URL(request.url)
     const listingId = searchParams.get("listingId")

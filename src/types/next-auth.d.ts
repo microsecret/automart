@@ -12,6 +12,7 @@ declare module "next-auth" {
   interface User {
     role: string
     accountStatus: string
+    sessionVersion?: number
   }
 }
 
@@ -20,6 +21,7 @@ declare module "next-auth/jwt" {
     id: string
     role: string
     accountStatus: string
+    sessionVersion?: number
   }
 }
 

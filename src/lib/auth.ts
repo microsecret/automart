@@ -38,7 +38,7 @@ export const authOptions: NextAuthOptions = {
         if (user.accountStatus === "BANNED") throw new Error("ACCOUNT_BANNED")
         if (user.accountStatus === "RESTRICTED") throw new Error("ACCOUNT_RESTRICTED")
         if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED")
-        return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role), accountStatus: user.accountStatus }
+        return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role), accountStatus: user.accountStatus, sessionVersion: user.sessionVersion }
       },
     }),
     CredentialsProvider({
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         const user = await getVerifiedTelegramUser(telegramUser.id)
         if (!user) return null
         if (user.accountStatus !== "ACTIVE") throw new Error(user.accountStatus === "BANNED" ? "ACCOUNT_BANNED" : "ACCOUNT_RESTRICTED")
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role), accountStatus: user.accountStatus }
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role), accountStatus: user.accountStatus, sessionVersion: user.sessionVersion }
       },
     }),
   ],
@@ -66,10 +66,14 @@ export const authOptions: NextAuthOptions = {
         // чтобы снятие доступа сработало сразу, а не после истечения токена.
         const currentUser = await prisma.user.findUnique({
           where: { id: String(token.id) },
-          select: { id: true, name: true, email: true, image: true, role: true, accountStatus: true },
+          select: { id: true, name: true, email: true, image: true, role: true, accountStatus: true, sessionVersion: true },
         })
 
-        if (!currentUser) {
+        // Legacy tokens predate versioning and represent version zero. A reset
+        // increments the durable version, invalidating both old and new JWTs.
+        const tokenVersion = typeof token.sessionVersion === "number" && Number.isSafeInteger(token.sessionVersion)
+          ? token.sessionVersion : 0
+        if (!currentUser || tokenVersion !== currentUser.sessionVersion) {
           // A deleted account must not keep the identity or privileges embedded
           // in an older JWT. Routes that require a user id will reject this
           // invalidated session, while role checks always see the lowest role.
@@ -103,7 +107,12 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
+        // Capture only at a genuine login. Refresh/update of an existing JWT
+        // must never upgrade a revoked token to the current account version.
         token.id = user.id
+        // Keep the version read alongside the validated credentials. Reading
+        // again here could bless an old-password login racing with a reset.
+        token.sessionVersion = user.sessionVersion ?? -1
         token.role = normalizeUserRole(user.role)
         token.accountStatus = user.accountStatus
         token.checkedAt = Date.now()

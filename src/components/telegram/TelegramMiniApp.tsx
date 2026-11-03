@@ -110,9 +110,16 @@ export default function TelegramMiniApp() {
         }
 
         /* Пришёл по кнопке с целью — ведём сразу, не задерживая на ленте. */
-        const startRoute = resolveStartRoute(webApp.initData)
+        // Explicit Home/Back navigation wins over a start_param retained by
+        // Telegram in initData for the lifetime of this WebView.
+        const returningHome = new URLSearchParams(window.location.search).get("tgHome") === "1"
+        const startRoute = returningHome ? null : resolveStartRoute(webApp.initData, window.location.search)
         if (startRoute) {
-          window.location.assign(startRoute)
+          // Consume the entry instead of keeping a redirecting landing in
+          // history. The return bar must not step into an external predecessor.
+          const destination = new URL(startRoute, window.location.origin)
+          destination.searchParams.set("tgEntry", "1")
+          window.location.replace(`${destination.pathname}${destination.search}`)
           return
         }
 

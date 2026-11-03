@@ -34,6 +34,8 @@ model User {
   restrictionReason  String?
   statusUpdatedAt    DateTime?
   hashedPassword     String?
+  // Increment on password reset; signed JWTs retain their login-time version.
+  sessionVersion     Int       @default(0)
 
   // Напоминания о незавершённой регистрации: когда отправили последнее и
   // сколько всего. Нужны, чтобы не писать человеку бесконечно.

@@ -35,7 +35,22 @@ export default function TelegramReturnBar() {
 
     const goBack = () => {
       webApp?.HapticFeedback?.impactOccurred("light")
-      window.history.back()
+      const current = new URL(window.location.href)
+      let hasInternalPredecessor = false
+      try {
+        const referrer = new URL(document.referrer)
+        hasInternalPredecessor = window.history.length > 1
+          && referrer.origin === current.origin
+          && referrer.href !== current.href
+          && !(referrer.pathname === "/telegram" && referrer.searchParams.has("start"))
+      } catch {
+        // Fresh WebViews and restricted referrer policies have no safe history.
+      }
+      if (current.searchParams.get("tgEntry") === "1" || !hasInternalPredecessor) {
+        window.location.replace("/telegram?tgHome=1")
+      } else {
+        window.history.back()
+      }
     }
 
     backButton.onClick(goBack)
@@ -52,7 +67,7 @@ export default function TelegramReturnBar() {
 
   return (
     <Box className="tg-return-bar">
-      <Link href="/telegram" onClick={() => tapFeedback("light")} className="tg-return-bar__link">
+      <Link href="/telegram?tgHome=1" onClick={() => tapFeedback("light")} className="tg-return-bar__link">
         <IconArrowLeft size={16} />
         <Text size="sm" fw={600}>Вернуться в приложение</Text>
       </Link>

@@ -154,7 +154,7 @@ export async function resetPasswordByToken(rawToken: string, hashedPassword: str
   }
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { hashedPassword } }),
+    prisma.user.update({ where: { id: user.id }, data: { hashedPassword, sessionVersion: { increment: 1 } } }),
     prisma.session.deleteMany({ where: { userId: user.id } }),
     prisma.verificationToken.delete({ where: { token } }),
   ])

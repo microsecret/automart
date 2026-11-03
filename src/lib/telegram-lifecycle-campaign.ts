@@ -5,6 +5,7 @@ import { FIRST_NUDGE_DELAY_MS, NUDGE_INTERVAL_MS, nudgeIndex, nudgeText } from "
 import { WEEKLY_DIGEST_OFF_CALLBACK } from "@/lib/telegram-weekly-digest-message"
 import { buildWeeklyDigestFor } from "@/lib/telegram-weekly-digest-content"
 import { sendTelegramCampaignPhoto } from "@/lib/telegram-campaign-photo"
+import { isTelegramCampaignWaveActive } from "@/lib/telegram-campaign-lock"
 
 const BATCH_SIZE = 25
 const SEND_INTERVAL_MS = 200
@@ -26,6 +27,10 @@ function registrationKeyboard() {
  * An uncertain send consumes this week's attempt, avoiding duplicate spam.
  */
 export async function processTelegramLifecycle(options: { now?: Date; dryRun?: boolean } = {}) {
+  if (!options.dryRun && await isTelegramCampaignWaveActive()) return {
+    checked: 0, due: 0, sent: 0, registration: 0, seller: 0, blocked: 0, failed: 0,
+    skipped: 0, retryAfterSeconds: 0, dryRun: false, pausedForWave: true,
+  }
   const now = options.now ?? new Date()
   const dueBefore = new Date(now.getTime() - NUDGE_INTERVAL_MS)
   const candidates = await prisma.telegramContact.findMany({
@@ -43,6 +48,7 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
   })
   const result = { checked: candidates.length, due: 0, sent: 0, registration: 0, seller: 0, blocked: 0, failed: 0, skipped: 0, retryAfterSeconds: 0, dryRun: options.dryRun === true }
   for (const contact of candidates) {
+    if (!result.dryRun && await isTelegramCampaignWaveActive()) break
     if (nudgeIndex(contact.startedAt, now) < 0) { result.skipped++; continue }
     const user = await prisma.user.findUnique({ where: { telegramId: contact.telegramId }, select: {
       email: true, emailVerified: true, phone: true, telegramVerifiedAt: true, hashedPassword: true,
@@ -70,6 +76,14 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
         telegramId: contact.telegramId, lastBroadcastAt: now, blocked: false, weeklyOptOut: false,
       }, data: { registered } })
       if (stillAllowed.count !== 1) { result.skipped++; continue }
+      if (await isTelegramCampaignWaveActive()) {
+        // No provider call has happened. Release only this unsent attempt.
+        await prisma.telegramContact.updateMany({ where: {
+          telegramId: contact.telegramId, lastBroadcastAt: now, lastWeeklyAt: contact.lastWeeklyAt,
+        }, data: { lastBroadcastAt: contact.lastBroadcastAt } })
+        result.skipped++
+        break
+      }
       if (registered) {
         const message = await buildWeeklyDigestFor(contact.telegramId)
         await sendTelegramCampaignPhoto(contact.telegramId, "seller", message.text, message.reply_markup)

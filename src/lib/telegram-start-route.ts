@@ -30,6 +30,9 @@ export const CREATE_VEHICLE_ROUTE = "/listings/create/vehicle"
    перенаправлением внутри приложения. */
 const START_PARAM_ROUTES: Record<string, string> = {
   create: `${CREATE_VEHICLE_ROUTE}?source=telegram`,
+  createpart: "/listings/create/part?from=telegram",
+  payments: "/dashboard?tab=payments&from=telegram",
+  dashboard: "/dashboard?from=telegram",
   promo: "/auctions?from=telegram",
   /* Вход ради топлива.
 
