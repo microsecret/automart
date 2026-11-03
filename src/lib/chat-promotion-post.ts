@@ -17,6 +17,8 @@ export const MAX_POST_PHOTOS = 9
 const CAPTION_LIMIT = 1024
 
 export type PromotedListing = {
+  /** Omitted by older vehicle callers. Subject id, not Listing.id, owns the URL. */
+  kind?: "vehicle" | "part"
   id: string
   title: string
   price: number
@@ -26,6 +28,14 @@ export type PromotedListing = {
   fuelType?: string | null
   transmission?: string | null
   power?: number | null
+  condition?: string | null
+  oemNumber?: string | null
+  brandName?: string | null
+  make?: string | null
+  model?: string | null
+  yearFrom?: number | null
+  yearTo?: number | null
+  availability?: string | null
   images: string[]
   /** Идентификатор продавца в Telegram — для кнопки «Написать». */
   sellerTelegramId?: string | null
@@ -82,6 +92,10 @@ const SPEC_LABELS: Record<string, string> = {
   GAS: "газ",
 }
 
+const PART_AVAILABILITY_LABELS: Record<string, string> = {
+  IN_STOCK: "в наличии", ON_ORDER: "под заказ", IN_TRANSIT: "в пути",
+}
+
 /**
  * Переводит код характеристики.
  *
@@ -124,23 +138,42 @@ function formatMileage(mileage: number): string {
  */
 export function buildChatPost(listing: PromotedListing, options: { botUsername?: string; siteUrl: string }): ChatPost {
   const photos = listing.images.filter((url) => typeof url === "string" && url.length > 0).slice(0, MAX_POST_PHOTOS)
+  const isPart = listing.kind === "part"
 
   const specs: string[] = []
-  if (listing.year) specs.push(`${listing.year} г.`)
-  if (listing.mileage) specs.push(formatMileage(listing.mileage))
-  if (listing.power) specs.push(`${Math.round(listing.power)} л.с.`)
-  const transmission = specLabel(listing.transmission)
-  if (transmission) specs.push(escapeHtml(transmission))
-  const fuel = specLabel(listing.fuelType)
-  if (fuel) specs.push(escapeHtml(fuel))
+  if (isPart) {
+    const condition = listing.condition === "NEW" ? "новая" : listing.condition === "USED" ? "б/у" : null
+    const availability = PART_AVAILABILITY_LABELS[listing.availability || ""]
+    if (condition) specs.push(condition)
+    if (availability) specs.push(availability)
+  } else {
+    if (listing.year) specs.push(`${listing.year} г.`)
+    if (listing.mileage) specs.push(formatMileage(listing.mileage))
+    if (listing.power) specs.push(`${Math.round(listing.power)} л.с.`)
+    const transmission = specLabel(listing.transmission)
+    if (transmission) specs.push(escapeHtml(transmission))
+    const fuel = specLabel(listing.fuelType)
+    if (fuel) specs.push(escapeHtml(fuel))
+  }
 
   const lines: string[] = [
-    `🚗 <b>${escapeHtml(listing.title)}</b>`,
+    `${isPart ? "🔧" : "🚗"} <b>${escapeHtml(listing.title.length > 120 ? `${listing.title.slice(0, 119)}…` : listing.title)}</b>`,
     "",
     `💰 <b>${formatPrice(listing.price)}</b>`,
   ]
 
   if (specs.length) lines.push(`⚙️ ${specs.join(" · ")}`)
+  if (isPart) {
+    if (listing.oemNumber?.trim()) lines.push(`Артикул: ${escapeHtml(listing.oemNumber.trim())}`)
+    if (listing.brandName?.trim()) lines.push(`Производитель: ${escapeHtml(listing.brandName.trim())}`)
+    const compatibility = [listing.make, listing.model]
+      .filter((value): value is string => Boolean(value?.trim() && !["Universal", "Универсальная", "—"].includes(value.trim())))
+      .map((value) => escapeHtml(value.trim())).join(" ")
+    const years = listing.yearFrom && listing.yearTo
+      ? `${listing.yearFrom}–${listing.yearTo}`
+      : listing.yearFrom ? `от ${listing.yearFrom} г.` : listing.yearTo ? `до ${listing.yearTo} г.` : ""
+    if (compatibility || years) lines.push(`Совместимость: ${[compatibility, years].filter(Boolean).join(" · ")}`)
+  }
   if (listing.city) lines.push(`📍 ${escapeHtml(listing.city)}`)
 
   /* Подпись едет вместе с фотографиями, поэтому в ней только то, что
@@ -155,7 +188,7 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
     caption = caption.slice(0, CAPTION_LIMIT - 1).replace(/\n[^\n]*$/, "")
   }
 
-  const listingUrl = `${options.siteUrl.replace(/\/$/, "")}/listings/vehicle/${listing.id}`
+  const listingUrl = `${options.siteUrl.replace(/\/$/, "")}/listings/${isPart ? "part" : "vehicle"}/${listing.id}`
 
   const buttons: PostButton[] = []
 
@@ -209,7 +242,7 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
 
   buttons.push({
     text: "➕ Разместить своё объявление",
-    url: `${options.siteUrl.replace(/\/$/, "")}/listings/create/vehicle`,
+    url: `${options.siteUrl.replace(/\/$/, "")}/listings/create/${isPart ? "part" : "vehicle"}`,
   })
 
   return {

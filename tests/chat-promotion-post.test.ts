@@ -15,6 +15,30 @@ const base = {
   images: ["https://a/1.jpg", "https://a/2.jpg"],
 }
 
+test("запчасть получает свою карточку, совместимость и состояние без автомобильных характеристик", () => {
+  const post = buildChatPost({
+    ...base, kind: "part", id: "part-123", title: "Фара левая", condition: "USED", availability: "IN_STOCK",
+    oemNumber: "81170-<ABC>", brandName: "Toyota", make: "Toyota", model: "Camry", yearFrom: 2014, yearTo: 2017,
+    power: 181, transmission: "AUTOMATIC", fuelType: "GASOLINE", sellerTelegramId: "12345",
+  }, { siteUrl: SITE, botUsername: "lewheelbot" })
+  assert.match(post.caption, /^🔧/)
+  assert.match(post.caption, /б\/у · в наличии/)
+  assert.match(post.caption, /Артикул: 81170-&lt;ABC&gt;/)
+  assert.match(post.caption, /Совместимость: Toyota Camry · 2014–2017/)
+  assert.doesNotMatch(post.caption, /2019 г\.|км|л\.с\.|автомат|бензин/)
+  assert.ok(post.buttons[0].url.endsWith("/listings/part/part-123"))
+  assert.ok(post.buttons.find((button) => button.text.includes("Написать"))?.url.includes("/listings/part/part-123"))
+  assert.ok(post.buttons.at(-1)?.url.endsWith("/listings/create/part"))
+  const shared = post.buttons.find((button) => button.text.includes("Поделиться"))
+  assert.ok(shared && decodeURIComponent(shared.url).includes("/listings/part/part-123"))
+})
+
+test("неизвестное состояние запчасти не превращается в выдуманное новое", () => {
+  const post = buildChatPost({ kind: "part", id: "part-123", title: "Фильтр", price: 1000, images: [], condition: "UNKNOWN", make: "Универсальная", model: "—" }, { siteUrl: SITE })
+  assert.doesNotMatch(post.caption, /новая|б\/у|Совместимость/)
+  assert.match(post.caption, /1.000.₽/)
+})
+
 test("цена стоит первой и с неразрывными пробелами", () => {
   // По цене человек решает, читать ли дальше. Разрыв «2 350» / «000 ₽»
   // на переносе строки делает её нечитаемой.

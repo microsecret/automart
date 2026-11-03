@@ -15,11 +15,11 @@ import { audienceWhere, type BroadcastAudience } from "@/lib/telegram-broadcast-
  * параллельно.
  */
 
-/** Сообщений в секунду. Двадцать вместо тридцати — запас на пики трафика. */
-const MESSAGES_PER_SECOND = 20
+/** User policy: at most five campaign messages per second. */
+const MESSAGES_PER_SECOND = 5
 
 /** Размер пачки: столько уходит, потом пауза. */
-const BATCH_SIZE = 20
+const BATCH_SIZE = 5
 
 export type { BroadcastAudience }
 

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { checkPartnerAccess } from "@/lib/partner-access"
@@ -17,11 +16,11 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-    const userId = session.user.id
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const { session, userId } = guard
     const summaryOnly = new URL(request.url).searchParams.get("scope") === "summary"
+    const promotionNow = new Date()
 
     const deliveryAccess = {
       OR: [
@@ -120,7 +119,15 @@ export async function GET(request: Request) {
         _count: true,
       }),
       prisma.listing.count({
-        where: { userId, promoUntil: { gt: new Date() } },
+        // Count placements, not payment renewals. Chat-only promotion is owned
+        // by its paid order and need not replace a listing's premium fields.
+        where: {
+          userId, deletedAt: null, status: LISTING_STATUS.ACTIVE,
+          OR: [
+            { promoUntil: { gt: promotionNow } },
+            { promotionOrders: { some: { userId, tariffId: "chats", status: "PAID", promoUntil: { gt: promotionNow } } } },
+          ],
+        },
       }),
       /* Число избранного считается запросом, а не по выборке.
 
@@ -131,6 +138,17 @@ export async function GET(request: Request) {
         where: { favoritedBy: { some: { id: userId } } },
       }),
     ])
+
+    // A daily repost is another publication, not another destination chat.
+    // Only aggregate the owner's displayed orders, and never expose chat IDs.
+    const promotionChatGroups = promotionOrders.length ? await prisma.chatPromotionPost.groupBy({
+      by: ["orderId", "chatId"],
+      where: { orderId: { in: promotionOrders.map((order) => order.id) }, order: { userId }, removedAt: null },
+    }) : []
+    const chatCountByOrder = new Map<string, number>()
+    for (const group of promotionChatGroups) {
+      chatCountByOrder.set(group.orderId, (chatCountByOrder.get(group.orderId) ?? 0) + 1)
+    }
 
     const countByStatus = Object.fromEntries(
       listingsByStatus.map((row) => [row.status, row._count]),
@@ -177,7 +195,12 @@ export async function GET(request: Request) {
         part: l.part,
       })),
       favorites: favorites?.favoriteListings || [],
-      promotionOrders,
+      promotionOrders: promotionOrders.map((order) => ({
+        ...order,
+        // Keep _count.chatPosts unchanged for existing clients.
+        chatPublicationCount: order._count.chatPosts,
+        chatCount: chatCountByOrder.get(order.id) ?? 0,
+      })),
       // Меню кабинета показывало партнёрские разделы всем подряд, поэтому
       // обычный продавец открывал магазин и упирался в отказ доступа.
       // Статус приходит вместе со статистикой, чтобы не звать отдельный запрос

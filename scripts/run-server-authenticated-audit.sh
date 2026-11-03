@@ -7,6 +7,7 @@ cd "$project_root"
 audit_port="${AUTOMART_AUTH_AUDIT_PORT:-4011}"
 audit_script="${AUTOMART_AUTH_AUDIT_SCRIPT:-scripts/server-authenticated-audit.mjs}"
 case "$audit_script" in
+  scripts/verify-promotion-activation.mjs|scripts/verify-promotion-chat-metrics.mjs) ;;
   scripts/verify-session-revocation.mjs|scripts/verify-miniapp-workflows.mjs) ;;
   scripts/verify-service-artwork.mjs) ;;
   scripts/verify-similar-auctions.mjs) ;;

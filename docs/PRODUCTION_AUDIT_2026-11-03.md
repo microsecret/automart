@@ -37,6 +37,13 @@ Preview initially found 1924 reachable contacts: 1405 incomplete registrations
 and 519 registered sellers. Eligibility is checked again before each send;
 blocked, opted-out and restricted users are excluded. Counts can change.
 
+The completed wave `20261103-branded-invite` checked 1925 contacts and delivered
+1834 messages: 1335 registration reminders and 499 seller invitations. Telegram
+reported 91 contacts blocked/unavailable; uncertain results, rate-limit errors
+and failed state updates were all zero. All three lifecycle scheduler jobs were
+restored and the active marker cleared. An aggregate completed-wave entry was
+saved in the administrator broadcast history without exposing recipient IDs.
+
 The explicit campaign is separate from the normal weekly schedule. A private
 atomic/fsynced checkpoint is recorded before each provider call. A lost reply
 is not proof of failure and is never automatically resent. Definite Telegram
@@ -72,6 +79,36 @@ traffic is blocked. Test runs do not send campaign messages.
 Screenshots and the initial browser report are saved under
 `D:/Проекты/Авторынок/output/production-audit-20261103`.
 
+## Paid promotion follow-up
+
+- A first transaction write now serializes renewal expiry reads. Distinct
+  simultaneous payments add their full durations; duplicate callbacks do not
+  activate twice. Inactive/deleted/transferred listings retain the payment
+  reference for manual review instead of receiving a false active entitlement.
+- Legacy chat orders retain their stored price/duration and 48-hour cadence.
+  Their expiry is independent of the listing's website Premium/VIP fields.
+- Paid parts use their actual part URL, OEM/compatibility/condition data and
+  creation action. Unsupported subjects cannot consume the bounded batch.
+- Repost cooldowns are keyed by listing and chat across renewals. Renewed
+  listings retain earlier posts during expiry cleanup; expiry warnings use
+  the latest paid entitlement rather than an obsolete predecessor order.
+- Dashboard history separates repeat publications from distinct destinations,
+  omits raw chat IDs and scopes every aggregate to the current owner. Active
+  placements count each active listing once; superseded website orders cannot
+  revive an expired placement. Revoked sessions receive 401.
+- Ordinary administrator broadcasts now retain the user's five-per-second
+  limit in addition to the completed explicitly requested campaign.
+
+Server verification: activation integration 24 checks, delivery/expiry and
+broadcast timing tests 11, post formatting tests 20; all passed. An independent
+final static review found no remaining material blocker in this scoped delta.
+The final disposable dashboard API/browser matrix passed 26 checks, including
+superseded Premium/expired Boost, anonymous/revoked sessions, owner privacy,
+distinct destinations and mobile/desktop overflow/runtime checks. Final
+TypeScript, scoped ESLint and production build passed. Screenshots are
+`promotion-metrics-mobile.png` and `promotion-metrics-desktop.png` in the same
+local audit output directory. The fixture values are synthetic, not live sales.
+
 ## Open findings and practical limits
 
 This is evidence for the checked flows, not a claim that every site feature
@@ -95,14 +132,13 @@ or every external provider scenario has passed an exhaustive audit.
 - Approved new chat plans (300/7 days daily, 700/30 days daily, 1200/30 days
   twice daily) and full nine-photo posts remain separate unfinished work.
   Current seller campaign advertises no new prices or invented reach numbers.
-- Payment audit found additional work: paid parts are skipped by the current
-  chat worker; concurrent renewal reads outside the transaction can lose paid
-  duration; chat activation can overwrite visual Premium/VIP benefits; repeat
-  posts must not be labelled as distinct chat reach. These need isolated
-  payment/delivery regression tests and their own reviewed fix.
-- Operational: production root filesystem was 92% used with 6 GB available;
-  old deployment archives need a deliberate retention policy. Current media,
-  database and backups were not deleted by this audit.
+- The payment follow-up fixes paid part delivery, serialized renewal activation,
+  independent chat entitlements and distinct chat/publication metrics. Its
+  verification evidence is recorded separately below.
+- Operational cleanup removed 24 explicitly verified historical compiled-build
+  archives older than 30 October (18,505,298,030 file bytes). Free space rose
+  from about 6 GB to 23 GB (92% to 70% used). Current/previous builds, recent
+  rollback archives, source, media, databases and backups were preserved.
 
 Next priorities are verified-email onboarding, durable message notification
 delivery, accurate paid promotion scheduling/metrics and the remaining

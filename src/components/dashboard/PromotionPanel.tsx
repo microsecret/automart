@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text } from "@mantine/core"
 import { IconBrandTelegram, IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
 import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
+import { plural } from "@/lib/plural"
 import MetricCard from "@/components/ui/MetricCard"
 import ScenicBanner from "@/components/ui/ScenicBanner"
 
@@ -12,6 +13,10 @@ export type PromotionOrder = {
   tariffId: string
   /** Число публикаций в чатах — приходит из статистики кабинета. */
   _count?: { chatPosts: number }
+  /** Unremoved publications include repeated posts to the same destination. */
+  chatPublicationCount?: number
+  /** Distinct destinations among those unremoved publications. */
+  chatCount?: number
   amountRub: number
   durationDays: number
   status: string
@@ -45,15 +50,6 @@ const PROMOTION_STATUS_META: Record<string, { label: string; color: string }> = 
 const PROMOTION_TARIFF_LABELS: Record<string, string> = Object.fromEntries(
   Object.values(PROMOTION_TARIFFS).map((tariff) => [tariff.id, tariff.title]),
 )
-
-/** «в 11 чатах» — с русским склонением. */
-function pluralChats(count: number): string {
-  const lastTwo = count % 100
-  const lastOne = count % 10
-  if (lastTwo >= 11 && lastTwo <= 14) return "чатах"
-  if (lastOne === 1) return "чате"
-  return "чатах"
-}
 
 const formatRubles = (value: number) => new Intl.NumberFormat("ru-RU", {
   style: "currency",
@@ -127,6 +123,7 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
           <Stack gap="xs">
             {orders.map((order) => {
               const status = PROMOTION_STATUS_META[order.status] || { label: order.status, color: "gray" }
+              const publicationCount = order.chatPublicationCount ?? order._count?.chatPosts ?? 0
               return (
                 <Paper key={order.id} radius="md" p="sm" withBorder>
                   <Group justify="space-between" align="center" gap="md" wrap="wrap">
@@ -139,14 +136,14 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
                         Тариф «{PROMOTION_TARIFF_LABELS[order.tariffId] || order.tariffId}» · {order.durationDays} дн. · заказ от {formatOrderDate(order.createdAt)}
                       </Text>
                       {order.promoUntil && <Text size="xs" c="teal.7">Продвижение до {formatOrderDate(order.promoUntil)}</Text>}
-                      {/* Публикации в чатах: продавец платит за охват и
-                          должен видеть, что размещение состоялось, а не
-                          верить на слово. */}
-                      {(order._count?.chatPosts ?? 0) > 0 && (
+                      {/* Reposts and destination chats are separate counts;
+                          neither is an audience or impression measurement. */}
+                      {publicationCount > 0 && (
                         <Group gap={4}>
                           <IconBrandTelegram size={12} color="var(--mantine-color-blue-6)" />
                           <Text size="xs" c="indigo.7">
-                            Опубликовано в {order._count!.chatPosts} {pluralChats(order._count!.chatPosts)}
+                            {publicationCount} {plural(publicationCount, "публикация", "публикации", "публикаций")}
+                            {order.chatCount !== undefined && ` в ${order.chatCount} ${plural(order.chatCount, "чате", "чатах", "чатах")}`}
                           </Text>
                         </Group>
                       )}

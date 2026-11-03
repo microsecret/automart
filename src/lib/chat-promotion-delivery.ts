@@ -94,7 +94,7 @@ async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPo
 
     const message = await telegramApi<{ message_id: number }>("sendMessage", {
       chat_id: chatId,
-      text: post.actionText,
+      text: post.photos.length ? post.actionText : `${post.caption}\n\n${post.actionText}`,
       parse_mode: "HTML",
       disable_web_page_preview: true,
       reply_markup: { inline_keyboard: post.buttons.map((button) => [{ text: button.text, url: button.url }]) },
@@ -174,6 +174,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
         select: {
           id: true, title: true, price: true, status: true, deletedAt: true,
           vehicle: { select: { id: true, year: true, mileage: true, power: true, fuelType: true, transmission: true, images: true, location: true } },
+          part: { select: { id: true, images: true, location: true, condition: true, oemNumber: true, brandName: true, make: true, model: true, yearFrom: true, yearTo: true, availability: true } },
           user: { select: { telegramId: true } },
         },
       },
@@ -201,41 +202,60 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
      сведения. Здесь один запрос и набор в памяти. */
   const recentPosts = await prisma.chatPromotionPost.findMany({
     where: {
-      orderId: { in: allOrders.map((order) => order.id) },
+      // A renewal must respect the listing's actual last publication even
+      // when that post belongs to an older, now-expired payment order.
+      order: { listingId: { in: [...new Set(allOrders.map((order) => order.listingId))] } },
       publishedAt: { gt: new Date(now.getTime() - REPOST_INTERVAL_MS) },
     },
-    select: { orderId: true, chatId: true },
+    select: { order: { select: { listingId: true } }, chatId: true },
   })
-  const postedRecently = new Set(recentPosts.map((post) => `${post.orderId}:${post.chatId}`))
+  const postedRecently = new Set(recentPosts.map((post) => `${post.order.listingId}:${post.chatId}`))
 
   /* В работу — только те, кому есть куда публиковаться: хотя бы один чат
-     без свежего поста этого заказа. Предел на проход сохраняется — он
+     без свежего поста этого объявления. Предел на проход сохраняется — он
      бережёт лимит отправки Telegram. */
+  const selectedListings = new Set<string>()
   const orders = allOrders
-    .filter((order) => chats.some((chat) => !postedRecently.has(`${order.id}:${chat.id}`)))
+    // Unsupported/ambiguous legacy records must not occupy the bounded batch
+    // forever and starve valid paid vehicle or parts orders after them.
+    .filter((order) => Boolean(order.listing?.vehicle) !== Boolean(order.listing?.part))
+    .filter((order) => chats.some((chat) => !postedRecently.has(`${order.listingId}:${chat.id}`)))
+    // Input is oldest-paid first: keep that order as the honest publication
+    // attribution, but do not let its renewal occupy another bounded slot.
+    .filter((order) => {
+      if (selectedListings.has(order.listingId)) return false
+      selectedListings.add(order.listingId)
+      return true
+    })
     .slice(0, maxOrders)
 
   for (const order of orders) {
     /* Снятое или скрытое объявление в чатах не публикуется: продавец мог
        уже продать машину, и звонки по чужому объявлению никому не нужны. */
-    if (!order.listing || order.listing.deletedAt || order.listing.status !== "ACTIVE" || !order.listing.vehicle) {
+    if (!order.listing || order.listing.deletedAt || order.listing.status !== "ACTIVE" || (!order.listing.vehicle && !order.listing.part)) {
       skipped += 1
       continue
     }
 
     const vehicle = order.listing.vehicle
-    const images = parseImages(vehicle.images)
+    const part = order.listing.part
+    const subject = vehicle || part
+    if (!subject) { skipped += 1; continue }
+    const images = parseImages(subject.images)
 
     const listing: PromotedListing = {
-      id: vehicle.id,
+      id: subject.id,
+      kind: vehicle ? "vehicle" : "part",
       title: order.listing.title,
       price: order.listing.price,
-      city: vehicle.location,
-      year: vehicle.year,
-      mileage: vehicle.mileage,
-      power: vehicle.power,
-      fuelType: vehicle.fuelType,
-      transmission: vehicle.transmission,
+      city: subject.location,
+      ...(vehicle ? {
+        year: vehicle.year, mileage: vehicle.mileage, power: vehicle.power,
+        fuelType: vehicle.fuelType, transmission: vehicle.transmission,
+      } : part ? {
+        condition: part.condition, oemNumber: part.oemNumber, brandName: part.brandName,
+        make: part.make, model: part.model, yearFrom: part.yearFrom, yearTo: part.yearTo, availability: part.availability,
+      } : {}),
       images,
       sellerTelegramId: order.listing.user?.telegramId ?? null,
     }
@@ -243,8 +263,8 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
     const post = buildChatPost(listing, { siteUrl, botUsername: botUsername || undefined })
 
     for (const chat of chats) {
-      /* Тот же заказ в тот же чат — не чаще раза в двое суток. */
-      if (postedRecently.has(`${order.id}:${chat.id}`)) continue
+      /* То же объявление в тот же чат — не чаще раза в двое суток. */
+      if (postedRecently.has(`${order.listingId}:${chat.id}`)) continue
 
       const result = await publishToChat(chat.id, post)
       if (!result.messageId) {
@@ -257,6 +277,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
       await prisma.chatPromotionPost.create({
         data: { orderId: order.id, chatId: chat.id, messageId: result.messageId, pinned: wasPinned },
       })
+      postedRecently.add(`${order.listingId}:${chat.id}`)
 
       published += 1
       if (wasPinned) pinned += 1
@@ -278,8 +299,26 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
 export async function cleanupExpiredChatPromotions() {
   const now = new Date()
 
+  // A post is attributed to the oldest active paid order. Its renewal can
+  // outlive that order, so preserve the post while the same current owner's
+  // listing still has a paid legacy chat entitlement. Exclude these listings
+  // before the cleanup batch limit; retained renewals must not starve cleanup.
+  const ongoingOrders = await prisma.promotionOrder.findMany({
+    where: {
+      tariffId: "chats", status: "PAID", promoUntil: { gt: now },
+      listing: { status: "ACTIVE", deletedAt: null },
+    },
+    select: { listingId: true, userId: true, listing: { select: { userId: true } } },
+  })
+  const ongoingListingIds = [...new Set(ongoingOrders
+    .filter((order) => order.userId === order.listing.userId)
+    .map((order) => order.listingId))]
+
   const expired = await prisma.chatPromotionPost.findMany({
-    where: { removedAt: null, order: { promoUntil: { lte: now } } },
+    where: { removedAt: null, order: {
+      promoUntil: { lte: now },
+      ...(ongoingListingIds.length ? { listingId: { notIn: ongoingListingIds } } : {}),
+    } },
     select: { id: true, chatId: true, messageId: true, pinned: true },
     take: 200,
   })
@@ -311,20 +350,35 @@ export async function notifyExpiringChatPromotions() {
   const now = new Date()
   const soon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
-  const orders = await prisma.promotionOrder.findMany({
+  const allOrders = await prisma.promotionOrder.findMany({
     where: {
       tariffId: "chats",
       status: "PAID",
-      promoUntil: { gt: now, lte: soon },
+      // Read the full remaining entitlement, not just orders ending soon:
+      // a later paid renewal can already extend this same listing's term.
+      promoUntil: { gt: now },
+      listing: { status: "ACTIVE", deletedAt: null },
     },
     select: {
       id: true,
       userId: true,
       promoUntil: true,
       listingId: true,
-      listing: { select: { title: true } },
+      listing: { select: { title: true, userId: true } },
     },
   })
+
+  const latestByListing = new Map<string, (typeof allOrders)[number]>()
+  for (const order of allOrders) {
+    if (!order.promoUntil || order.userId !== order.listing.userId) continue
+    const previous = latestByListing.get(order.listingId)
+    if (!previous || !previous.promoUntil || order.promoUntil > previous.promoUntil
+      || (+order.promoUntil === +previous.promoUntil && order.id < previous.id)) {
+      latestByListing.set(order.listingId, order)
+    }
+  }
+  const orders = [...latestByListing.values()].filter((order) => order.promoUntil && order.promoUntil <= soon)
+  if (!orders.length) return { notified: 0 }
 
   /* Уже отправленные предупреждения читаются разом, а не по заказу.
 

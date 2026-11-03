@@ -52,31 +52,26 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
   }
   if (order.status === "PAID" && order.providerPaymentId === providerPaymentId) return "already_active"
 
-  /* Продление, а не замена срока.
-
-     Срок считался от даты нового платежа: продавец, оплативший тот же
-     тариф ещё до конца прежнего, терял оставшиеся дни — новый срок
-     просто затирал старый (аудит бэкенда 28.10.2026). Если тот же тариф
-     ещё действует, новый срок начинается с его конца. Повтор уведомления
-     срок не продлит: второй раз заказ не пройдёт отметку ниже. */
-  const current = await prisma.listing.findUnique({ where: { id: listingId }, select: { promoType: true, promoUntil: true } })
-  const anchor = current?.promoType === tariff.id && current.promoUntil && current.promoUntil > paymentCreatedAt
-    ? current.promoUntil
-    : paymentCreatedAt
-  const promoUntil = new Date(anchor.getTime() + tariff.durationDays * 86_400_000)
-
-  const activated = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx): Promise<ActivationResult> => {
+    // Acquire the SQLite write transaction before reading the current expiry.
+    // Distinct payments cannot both extend the same stale pre-transaction date.
     const claimed = await tx.promotionOrder.updateMany({
       where: { id: orderId, status: { in: ["PENDING", "FAILED"] }, providerPaymentId: null },
-      data: { status: "PAID", providerPaymentId, promoUntil, paidAt: new Date() },
+      data: { status: "PAID", providerPaymentId, paidAt: new Date() },
     })
-    if (!claimed.count) return false
+    if (!claimed.count) {
+      const settled = await tx.promotionOrder.findUnique({
+        where: { id: orderId }, select: { status: true, providerPaymentId: true },
+      })
+      return settled?.status === "PAID" && settled.providerPaymentId === providerPaymentId
+        ? "already_active" : "listing_inactive"
+    }
 
-    const updated = await tx.listing.updateMany({
+    const current = await tx.listing.findFirst({
       where: { id: listingId, userId, status: LISTING_STATUS.ACTIVE, deletedAt: null },
-      data: { isFeatured: tariff.isFeatured, promoType: tariff.id, promoUntil },
+      select: { promoType: true, promoUntil: true },
     })
-    if (!updated.count) {
+    if (!current) {
       /* Деньги пришли, а объявление уже неактивно: заказ уходит на ручную
          проверку, продавцу — честное объяснение вместо тишины. */
       await tx.promotionOrder.update({ where: { id: orderId }, data: { status: "REVIEW_REQUIRED" } })
@@ -90,7 +85,29 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
           relatedType: "LISTING",
         },
       })
-      return false
+      return "listing_inactive"
+    }
+
+    const isChatPromotion = tariff.id === "chats"
+    const previousChatOrder = isChatPromotion ? await tx.promotionOrder.findFirst({
+      where: {
+        listingId, userId, tariffId: tariff.id, status: "PAID", id: { not: orderId },
+        promoUntil: { gt: paymentCreatedAt },
+      },
+      orderBy: { promoUntil: "desc" }, select: { promoUntil: true },
+    }) : null
+    // Chat visibility belongs to paid orders, independently of website badges.
+    // Legacy chat orders keep their stored terms; this read does not mutate them.
+    const previousExpiry = isChatPromotion ? previousChatOrder?.promoUntil
+      : current.promoType === tariff.id ? current.promoUntil : null
+    const anchor = previousExpiry && previousExpiry > paymentCreatedAt ? previousExpiry : paymentCreatedAt
+    const promoUntil = new Date(anchor.getTime() + tariff.durationDays * 86_400_000)
+    await tx.promotionOrder.update({ where: { id: orderId }, data: { promoUntil } })
+    if (!isChatPromotion) {
+      await tx.listing.update({
+        where: { id: listingId },
+        data: { isFeatured: tariff.isFeatured, promoType: tariff.id, promoUntil },
+      })
     }
 
     await tx.notification.create({
@@ -103,15 +120,13 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
         relatedType: "LISTING",
       },
     })
-    return true
+    return "activated"
   })
-
-  if (!activated) return "listing_inactive"
 
   /* Начисление партнёру идёт после активации и вне транзакции: сбой в
      партнёрской программе не должен отменять уже оплаченный тариф. */
-  await accrueReferralReward(orderId)
-  return "activated"
+  if (result === "activated") await accrueReferralReward(orderId)
+  return result
 }
 
 /** Помечает заказ несостоявшимся (отказ карты, истёкшая ссылка). */
