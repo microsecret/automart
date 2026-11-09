@@ -12,8 +12,8 @@ export async function withFuelChatBroadcast<T>(work: () => Promise<T>, busy: T):
 export async function hasRecentFuelChatPost(chatId: string, now: Date) {
   const configured = Number(process.env.FUEL_INVITE_INTERVAL_HOURS)
   // A longer operator override is respected; even an invalid/short override
-  // cannot send an invitation and a digest within the same rolling day.
-  const hours = Number.isFinite(configured) && configured > 0 ? Math.max(24, configured) : 24
+  // cannot send an invitation and a digest within the same rolling eight hours.
+  const hours = Number.isFinite(configured) && configured > 0 ? Math.max(8, configured) : 8
   const where = { chatId, publishedAt: { gt: new Date(now.getTime() - hours * 60 * 60_000) } }
   const [invite, digest] = await Promise.all([
     prisma.fuelInvitePost.findFirst({ where, select: { id: true } }),

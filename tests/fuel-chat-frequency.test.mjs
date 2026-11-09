@@ -6,7 +6,7 @@ import ts from "typescript"
 const source = readFileSync(new URL("../src/lib/fuel-chat-frequency.ts", import.meta.url), "utf8")
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
   .replace('import { prisma } from "@/lib/prisma";', 'const prisma = globalThis.__fuelFrequencyStore;')
-test("fuel invitations and digests share at least a rolling 24h cooldown, respecting longer overrides", async () => {
+test("fuel invitations and digests share at least a rolling 8h cooldown, respecting longer overrides", async () => {
   const saved = process.env.FUEL_INVITE_INTERVAL_HOURS
   let invite = null, digest = null
   const seen = []
@@ -16,13 +16,13 @@ test("fuel invitations and digests share at least a rolling 24h cooldown, respec
   }
   const { hasRecentFuelChatPost } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`)
   try {
-    for (const value of ["", "0", "-1", "6", "NaN", "Infinity", "24", "72", "120"]) {
+    for (const value of ["", "0", "-1", "6", "8", "NaN", "Infinity", "24", "72", "120"]) {
       process.env.FUEL_INVITE_INTERVAL_HOURS = value
       seen.length = 0; invite = null; digest = null
       const now = new Date("2026-11-02T00:00:00Z")
       assert.equal(await hasRecentFuelChatPost("-123", now), false)
       assert.equal(seen.length, 2)
-      const expectedHours = value === "120" ? 120 : value === "72" ? 72 : 24
+      const expectedHours = value === "120" ? 120 : value === "72" ? 72 : value === "24" ? 24 : 8
       assert.ok(seen.every(where => where.chatId === "-123" && +where.publishedAt.gt === +now - expectedHours * 3600_000))
       invite = { id: "sent-invite" }; assert.equal(await hasRecentFuelChatPost("-123", now), true)
       invite = null; digest = { id: "sent-digest" }; assert.equal(await hasRecentFuelChatPost("-123", now), true)

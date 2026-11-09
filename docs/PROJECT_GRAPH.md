@@ -30,7 +30,7 @@ flowchart LR
 ## Task routing graph
 
 Fuel chat campaigns: `fuel-invite-broadcast.ts` and `fuel-digest-broadcast.ts`
-share `fuel-chat-frequency.ts`: rolling 24-hour minimum across both histories,
+share `fuel-chat-frequency.ts`: rolling 8-hour minimum across both histories,
 with longer `FUEL_INVITE_INTERVAL_HOURS` overrides respected. Shared process
 admission avoids overlapping route bundles; multi-process cron runners must
 also share an external lock. Site and Mini App fuel links are separate actions.
