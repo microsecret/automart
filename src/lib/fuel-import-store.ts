@@ -7,6 +7,7 @@ import { AVAILABILITY_FUEL_LABELS } from "@/lib/fuel-availability"
 import { sanitizeStationPrices } from "@/lib/fuel-price-sanity"
 import { applyStationCorrection } from "@/lib/fuel-station-corrections"
 import { isCompleteRegionAnswer, shouldPruneRegion, vanishedCutoff } from "@/lib/fuel-station-freshness"
+import { insertFuelStationLogBatch, type FuelStationLogEntry } from "@/lib/fuel-import-log-batch"
 
 /**
  * Общее хранилище импортированных АЗС и цен.
@@ -94,26 +95,24 @@ function formatPricesForLog(prices: ImportedStationPrice[]): string | null {
    вставка на каждую заправку. */
 const LOG_FLUSH_SIZE = 5
 
-type PendingLogEntry = {
-  runId: string; source: string; city: string; station: string; address: string | null
-  prices: string | null; status: string | null; kind: string
-}
-
-async function flushLogEntries(entries: PendingLogEntry[]) {
-  if (!entries.length) return
+async function flushLogEntries(entries: FuelStationLogEntry[]): Promise<boolean> {
+  if (!entries.length) return true
   const batch = entries.splice(0, entries.length)
   /* Лента вспомогательная: сорванная запись строки не должна ронять
      прогон, ради которого всё и затевалось. */
   try {
-    await prisma.fuelImportLogEntry.createMany({ data: batch })
+    await insertFuelStationLogBatch(prisma, batch)
+    return true
   } catch (error) {
     console.error("Fuel run log write failed", error instanceof Error ? error.message : error)
+    return false
   }
 }
 
 export async function upsertImportedStations(stations: ImportedStation[], runId?: string): Promise<number> {
   let saved = 0
-  const logEntries: PendingLogEntry[] = []
+  const logEntries: FuelStationLogEntry[] = []
+  let writeStationLog = Boolean(runId)
 
   for (const rawStation of stations) {
     /* Источник врёт заметно чаще, чем кажется: пятая часть цен АИ-95 в
@@ -229,7 +228,7 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
       })
     }
     saved += 1
-    if (runId) {
+    if (runId && writeStationLog) {
       logEntries.push({
         runId,
         source: station.source,
@@ -240,7 +239,7 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
         status: station.status,
         kind: "STATION",
       })
-      if (logEntries.length >= LOG_FLUSH_SIZE) await flushLogEntries(logEntries)
+      if (logEntries.length >= LOG_FLUSH_SIZE) writeStationLog = await flushLogEntries(logEntries)
     }
   }
 
