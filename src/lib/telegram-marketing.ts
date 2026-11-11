@@ -12,9 +12,8 @@ import { yookassaConfig } from "@/lib/yookassa"
 const PROMO_BATCH_SIZE = 20
 type SentMessage = { message_id: number; photo?: Array<{ file_id: string }> }
 const PROMOTION_IMAGE = path.join(process.cwd(), "public", "images", "telegram", "promo-chats-week.jpg")
-const ONE_WEEK_MS = 604_800_000
-// Unix time starts on Thursday. Shift to Monday at midnight in Moscow.
-const marketingWeek = (time: Date) => Math.floor((+time + 3 * 86_400_000 + 3 * 3_600_000) / ONE_WEEK_MS)
+const PROMOTION_OFFER_INTERVAL_MS = 8 * 60 * 60 * 1000
+const PROMOTION_OFFER_BATCH_SIZE = 4
 
 export async function registerTelegramGroup(chat: { id: number | string; type: string; title?: string }) {
   if (chat.type !== "group" && chat.type !== "supergroup") return
@@ -31,9 +30,70 @@ export async function setTelegramChatMarketing(chatId: string, enabled: boolean)
   })
 }
 
-/** Existing polling route: durable six-hour attempt gate, independent of paid
- * listing delivery. Community invitations intentionally have no cleanup. */
+async function processPromotionOffers() {
+  if (!yookassaConfig() && !process.env.STRIPE_SECRET_KEY) return null
+  const botUsername = getTelegramBotUsername()
+  if (!botUsername) return null
+
+  const eligible = { active: true, marketingEnabled: true }
+  const cutoff = new Date(Date.now() - PROMOTION_OFFER_INTERVAL_MS)
+  const chats = await prisma.telegramChat.findMany({
+    where: { ...eligible, OR: [{ lastPromotionOfferAt: null }, { lastPromotionOfferAt: { lte: cutoff } }] },
+    orderBy: [{ lastPromotionOfferAt: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+    select: { id: true, lastPromotionOfferAt: true },
+    take: PROMOTION_OFFER_BATCH_SIZE,
+  })
+  if (!chats.length) return null
+
+  const image = await readFile(PROMOTION_IMAGE).catch(() => null)
+  if (!image) return null
+  const post = buildPromotionOfferPost({
+    siteUrl: absoluteUrl("/"),
+    chatCount: await prisma.telegramChat.count({ where: eligible }),
+    botUsername,
+    supportUsername: PROMOTION_PAYMENT_SUPPORT,
+    plans: CHAT_PROMOTION_OPTIONS,
+  })
+  const replyMarkup = { inline_keyboard: post.buttons.map((button) => [button]) }
+  const result = { kind: "promotion", due: chats.length, delivered: 0, failed: 0, skipped: 0 }
+  let fileId: string | undefined
+  for (const chat of chats) {
+    const claimed = await prisma.telegramChat.updateMany({
+      where: { id: chat.id, ...eligible, lastPromotionOfferAt: chat.lastPromotionOfferAt },
+      data: { lastPromotionOfferAt: new Date(), lastPromotionOfferMessage: null },
+    })
+    if (claimed.count !== 1) continue
+    try {
+      if (!(await isTelegramChatAdministrator(chat.id))) {
+        result.skipped += 1
+        continue
+      }
+      const sent = await telegramPhotoApi<SentMessage>({
+        chat_id: chat.id, parse_mode: "HTML", caption: post.caption,
+        disable_notification: true, reply_markup: replyMarkup,
+        ...(fileId ? { photo: fileId } : {}),
+      }, {
+        uploads: fileId ? [] : [{ field: "photo", filename: "promo-chats-week.jpg", contentType: "image/jpeg", data: image }],
+      })
+      fileId = sent.photo?.at(-1)?.file_id || fileId
+      await prisma.telegramChat.update({
+        where: { id: chat.id },
+        data: { lastPromotionOfferMessage: sent.message_id },
+      })
+      result.delivered += 1
+    } catch {
+      // Telegram may have accepted a timed-out request. Keep the slot claimed.
+      result.failed += 1
+    }
+  }
+  console.info("[promotion-offer]", JSON.stringify(result))
+  return result
+}
+
 export async function processTelegramMarketingCampaign() {
+  const promotion = await processPromotionOffers()
+  if (promotion) return promotion
+
   const dueBefore = new Date(Date.now() - communityIntervalMs(process.env.TELEGRAM_PROMO_INTERVAL_MS))
   const chats = await prisma.telegramChat.findMany({
     where: { active: true, marketingEnabled: true, OR: [{ lastPromoAt: null }, { lastPromoAt: { lte: dueBefore } }] },
@@ -43,20 +103,7 @@ export async function processTelegramMarketingCampaign() {
   // Only an operator-configured local upload, never a user-supplied URL.
   const imagePath = /^\/uploads\/[A-Za-z0-9._-]+$/.test(image) && !image.includes("..") ? image : ""
   const imageData = imagePath ? (await readLocalPhotos([imagePath])).get(imagePath) : undefined
-  const now = new Date()
-  const week = marketingWeek(now)
-  const promotionImage = chats.some((chat) => !chat.lastPromoAt || marketingWeek(chat.lastPromoAt) < week)
-    && (yookassaConfig() || process.env.STRIPE_SECRET_KEY)
-    ? await readFile(PROMOTION_IMAGE).catch(() => null) : null
-  const offer = promotionImage ? buildPromotionOfferPost({
-    siteUrl: absoluteUrl("/"),
-    chatCount: await prisma.telegramChat.count({ where: { active: true, marketingEnabled: true } }),
-    botUsername: getTelegramBotUsername(),
-    supportUsername: PROMOTION_PAYMENT_SUPPORT,
-    plans: CHAT_PROMOTION_OPTIONS,
-  }) : null
   let photoFileId: string | undefined
-  let promotionFileId: string | undefined
   let delivered = 0, failed = 0, skipped = 0
   for (const chat of chats) {
     const claimedAt = new Date()
@@ -67,20 +114,6 @@ export async function processTelegramMarketingCampaign() {
     if (claimed.count !== 1) continue
     try {
       if (!(await isTelegramChatAdministrator(chat.id))) { skipped += 1; continue }
-      if (offer && promotionImage && (!chat.lastPromoAt || marketingWeek(chat.lastPromoAt) < week)) {
-        const sent = await telegramPhotoApi<SentMessage>({
-          chat_id: chat.id, parse_mode: "HTML", caption: offer.caption,
-          disable_notification: true,
-          reply_markup: { inline_keyboard: offer.buttons.map((button) => [button]) },
-          ...(promotionFileId ? { photo: promotionFileId } : {}),
-        }, {
-          uploads: promotionFileId ? [] : [{ field: "photo", filename: "promo-chats-week.jpg", contentType: "image/jpeg", data: promotionImage }],
-        })
-        promotionFileId = sent.photo?.at(-1)?.file_id || promotionFileId
-        await prisma.telegramChat.update({ where: { id: chat.id }, data: { lastPromoMessage: sent.message_id, lastError: null } })
-        delivered += 1
-        continue
-      }
       const details = await telegramApi<{ id: number | string; username?: string; invite_link?: string }>("getChat", { chat_id: chat.id })
       // Never export/create a link or accidentally share another chat.
       const chatUrl = String(details.id) === chat.id ? communityChatUrl(details) : null

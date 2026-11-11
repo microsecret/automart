@@ -270,22 +270,24 @@ export function buildPromotionOfferPost(options: {
   plans: ReadonlyArray<{ title: string; amountRub: number; durationDays: number }>
 }): { caption: string; buttons: PostButton[] } {
   const caption = [
-    "🚘 <b>Покажите свой автомобиль покупателям в других городах</b>",
+    "🚘 <b>Покупатель может быть в другом городе</b>",
     "",
-    `LeWheel опубликует ваше объявление во всех подключённых чатах авторынка (сейчас их ${options.chatCount}). В каждом посте — фотографии, цена и кнопка для связи с продавцом.`,
+    `📣 LeWheel покажет ваше объявление во всех подключённых чатах авторынка (сейчас их ${options.chatCount}). Покупатели увидят фото, цену и смогут сразу написать вам.`,
     "",
     `📅 <b>Продвижение на ${options.plans[0]?.durationDays ?? 7} дней</b>`,
     ...options.plans.map((plan) => `• ${plan.title} — <b>${plan.amountRub} ₽</b>`),
     "",
-    "Сначала разместите объявление бесплатно. Когда оно появится на сайте, откройте «Мои объявления», нажмите «Продвинуть» и оплатите выбранную частоту.",
-    `Вопросы по оплате — @${options.supportUsername}`,
+    "<i>Одна оплата за неделю показов. LeWheel публикует объявление по выбранному графику.</i>",
+    "",
+    "Уже продаёте на LeWheel? <b>Выберите активное объявление и подключите тариф.</b> Если объявления ещё нет, подайте его бесплатно.",
+    `💬 Вопросы по оплате — @${options.supportUsername}`,
   ].join("\n")
 
   const site = options.siteUrl.replace(/\/$/, "")
   return {
     caption,
     buttons: [
-      { text: "🚀 Выбрать объявление", url: options.botUsername
+      { text: "🚀 Выбрать тариф в Mini App", url: options.botUsername
         ? `https://t.me/${options.botUsername}?startapp=promote`
         : `${site}/dashboard?tab=listings` },
       { text: "➕ Подать объявление бесплатно", url: options.botUsername

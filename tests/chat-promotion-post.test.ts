@@ -144,6 +144,8 @@ test("рекламный пост называет число чатов, сро
   assert.match(offer.caption, /7 дней/)
   assert.match(offer.caption, /@payment_admin/)
   assert.match(offer.caption, /бесплатн/)
+  assert.match(offer.caption, /<i>Одна оплата[^<]+<\/i>/)
+  assert.match(offer.caption, /<b>Выберите активное объявление/)
   assert.ok(offer.caption.length <= 1024)
 })
 

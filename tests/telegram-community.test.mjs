@@ -29,14 +29,18 @@ test("6h minimum survives invalid overrides; post keeps current chat identity an
   assert.ok(post.keyboard.inline_keyboard.flat().some(button => button.text.includes("Пройти авторизацию")))
 })
 
-async function fixture({ ownLink = true, error = false, paid = false } = {}) {
-  const calls = [], rows = [{ id: "-1001", title: "Авторынок Уфа", active: true, marketingEnabled: true, lastPromoAt: null }]
+async function fixture({ ownLink = true, error = false, paid = false, paidError = false } = {}) {
+  const calls = [], rows = [{ id: "-1001", title: "Авторынок Уфа", active: true, marketingEnabled: true, lastPromoAt: paid ? new Date() : null, lastPromotionOfferAt: null }]
   const key = `community${Math.random()}`
   const prisma = { telegramChat: {
-    findMany: async query => rows.filter(row => row.active && row.marketingEnabled && (!row.lastPromoAt || row.lastPromoAt <= query.where.OR[1].lastPromoAt.lte)).map(row => ({ ...row })),
+    findMany: async query => {
+      const [field] = Object.keys(query.where.OR[0])
+      return rows.filter(row => row.active && row.marketingEnabled && (!row[field] || row[field] <= query.where.OR[1][field].lte)).map(row => ({ ...row }))
+    },
     count: async () => rows.length,
     updateMany: async query => {
-      const row = rows.find(row => row.id === query.where.id && row.lastPromoAt === query.where.lastPromoAt)
+      const field = "lastPromotionOfferAt" in query.where ? "lastPromotionOfferAt" : "lastPromoAt"
+      const row = rows.find(row => row.id === query.where.id && row[field] === query.where[field])
       if (!row) return { count: 0 }
       Object.assign(row, query.data); return { count: 1 }
     },
@@ -53,7 +57,11 @@ async function fixture({ ownLink = true, error = false, paid = false } = {}) {
       assert.equal(method, "sendMessage", "no invite export, cleanup or unrelated provider call")
       return { message_id: 10 }
     },
-    telegramPhotoApi: async (payload) => { calls.push({ method: "sendPhoto", payload }); return { message_id: 11 } },
+    telegramPhotoApi: async (payload) => {
+      calls.push({ method: "sendPhoto", payload })
+      if (paidError) throw new Error("fake ambiguous delivery")
+      return { message_id: 11 }
+    },
     readLocalPhotos: async () => new Map(), photoMime: () => "image/jpeg",
     yookassaConfig: () => paid ? {} : null,
     readFile: async () => Buffer.from("test photo"),
@@ -81,13 +89,29 @@ test("durable CAS admits one concurrent wave and prevents a repeat within6h", as
   } finally { f.close() }
 })
 
-test("configured checkout gets one illustrated offer in the week's first due slot", async () => {
+test("offers go out every eight hours independently of community invitations", async () => {
   const f = await fixture({ paid: true })
   try {
-    assert.equal((await f.processTelegramMarketingCampaign()).delivered, 1)
+    const lastInvite = f.rows[0].lastPromoAt
+    await Promise.all([f.processTelegramMarketingCampaign(), f.processTelegramMarketingCampaign()])
+    assert.equal(f.rows[0].lastPromoAt, lastInvite)
+    assert.equal(f.rows[0].lastPromotionOfferMessage, 11)
+    f.rows[0].lastPromotionOfferAt = new Date(Date.now() - 7.9 * 3_600_000)
     assert.equal((await f.processTelegramMarketingCampaign()).due, 0)
     assert.equal(f.calls.filter(({ method }) => method === "sendPhoto").length, 1)
-    assert.equal(f.rows[0].lastPromoMessage, 11)
+    f.rows[0].lastPromotionOfferAt = new Date(Date.now() - 8 * 3_600_000)
+    assert.equal((await f.processTelegramMarketingCampaign()).delivered, 1)
+    assert.equal(f.calls.filter(({ method }) => method === "sendPhoto").length, 2)
+  } finally { f.close() }
+})
+
+test("an uncertain photo send does not trigger another offer in the same window", async () => {
+  const f = await fixture({ paid: true, paidError: true })
+  try {
+    assert.equal((await f.processTelegramMarketingCampaign()).failed, 1)
+    assert.equal(f.rows[0].lastPromotionOfferMessage, null)
+    assert.equal((await f.processTelegramMarketingCampaign()).due, 0)
+    assert.equal(f.calls.filter(({ method }) => method === "sendPhoto").length, 1)
   } finally { f.close() }
 })
 

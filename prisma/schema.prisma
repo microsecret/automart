@@ -1316,6 +1316,8 @@ model TelegramChat {
   lastSeenAt       DateTime  @default(now())
   lastPromoAt      DateTime?
   lastPromoMessage Int?
+  lastPromotionOfferAt      DateTime?
+  lastPromotionOfferMessage Int?
   lastError        String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
