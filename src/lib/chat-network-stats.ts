@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma"
 import { telegramApi } from "@/lib/telegram"
-import { REPOST_INTERVAL_MS } from "@/lib/chat-promotion-delivery"
 import type { ChatNetwork } from "@/lib/promotion-nudge-rules"
 
 /**
@@ -39,7 +38,7 @@ export async function getChatNetworkStats(now = Date.now()): Promise<ChatNetwork
   const value: ChatNetwork = {
     chats: chats.length,
     members: answered > 0 ? members : null,
-    repostDays: Math.round(REPOST_INTERVAL_MS / (24 * 60 * 60 * 1000)),
+    repostDays: 1,
   }
   cached = { at: now, value }
   return value

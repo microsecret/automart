@@ -116,7 +116,7 @@ export function chatPromotionPitch(network: ChatNetwork, priceRub: number, planD
   const audience = network.members ? ` — ${formatMembers(network.members)} участников` : ""
   return [
     `📣 ${network.chats} чатов авторынка по городам${audience}`,
-    `📌 Пост с закрепом, повтор каждые ${network.repostDays} дн. — до ${perChat} публикаций в каждом чате`,
+    `📌 Базовая частота — ${network.repostDays === 1 ? "раз в сутки" : `раз в ${network.repostDays} дн.`}, до ${perChat} публикаций в каждом чате`,
     `💸 ${priceRub} ₽ за ${planDays} дней — около ${perDay} ₽ в день`,
   ]
 }
@@ -138,7 +138,7 @@ export function nudgeText(input: {
   const name = input.title.trim() || "Ваше объявление"
   const pitch = input.network
     ? chatPromotionPitch(input.network, input.priceRub, input.planDays).join("\n")
-    : `📣 Показ во всех чатах авторынка сети с закрепом — ${input.priceRub} ₽ за ${input.planDays} дней.`
+    : `📣 Показ во всех подключённых чатах авторынка — от ${input.priceRub} ₽ за ${input.planDays} дней.`
 
   if (input.index === 0) {
     /* Цифры вместо уговоров: «12 просмотров за 8 дней» продавец
@@ -154,7 +154,7 @@ export function nudgeText(input: {
     return (
       `🔥 «${name}» всё ещё ждёт покупателя.\n\n` +
       "В чатах авторынка по городам люди ищут машину прямо сейчас — " +
-      "закрепим ваш пост и будем повторять его весь месяц.\n" +
+      "покажем ваше объявление по выбранному графику.\n" +
       pitch
     )
   }

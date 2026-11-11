@@ -39,6 +39,17 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
   const listingId = typeof body?.listingId === "string" ? body.listingId : null
   if (!listingId) return NextResponse.json({ error: "Не указано объявление" }, { status: 400 })
+  const orderId = typeof body?.orderId === "string" ? body.orderId : null
+  if (orderId) {
+    const order = await prisma.promotionOrder.findFirst({
+      where: { id: orderId, listingId, userId: session.user.id },
+      select: { id: true, status: true },
+    })
+    const status = order?.status === "PENDING" ? await reconcileSingleOrder(order.id, session.user.id)
+      : order?.status === "PAID" ? "activated"
+      : order?.status === "FAILED" || order?.status === "CANCELED" ? "canceled" : "unknown"
+    return NextResponse.json({ status }, { headers: rateLimitHeaders(limit) })
+  }
 
   /* Последний ждущий заказ по этому объявлению: человек только что
      вернулся со страницы оплаты, и это он и есть. */

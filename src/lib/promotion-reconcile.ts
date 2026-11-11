@@ -160,7 +160,7 @@ export async function reconcileSingleOrder(orderId: string, userId: string): Pro
     if (payment.status !== "succeeded" || !payment.paid) return "pending"
     if (!paymentMatchesAmount(payment, tariff.amountRub)) return "pending"
 
-    await activatePaidPromotion({
+    const result = await activatePaidPromotion({
       orderId: order.id,
       listingId: order.listingId,
       userId: order.userId,
@@ -168,7 +168,7 @@ export async function reconcileSingleOrder(orderId: string, userId: string): Pro
       providerPaymentId: payment.id,
       paymentCreatedAt: new Date(payment.created_at),
     })
-    return "activated"
+    return result === "activated" || result === "already_active" ? "activated" : "unknown"
   } catch (error) {
     console.error(`Сверка заказа ${orderId}:`, error instanceof Error ? error.message : error)
     return "pending"

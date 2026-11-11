@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { absoluteUrl } from "@/lib/site-url"
-import { getPromotionTariff } from "@/lib/promotion-tariffs"
+import { CHAT_PROMOTION_OPTIONS } from "@/lib/promotion-tariffs"
 import { createYookassaPayment, yookassaConfig } from "@/lib/yookassa"
 
 export const dynamic = "force-dynamic"
@@ -15,21 +15,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ error: "Войдите, чтобы оплатить продвижение" }, { status: 401 })
 
     const body = await request.json().catch(() => null)
-    const tariff = getPromotionTariff(body?.tariff)
-    if (!tariff) return NextResponse.json({ error: "Неизвестный тариф" }, { status: 400 })
+    const tariff = CHAT_PROMOTION_OPTIONS.find((option) => option.id === body?.tariff)
+    if (!tariff) return NextResponse.json({ error: "Обновите страницу и выберите частоту публикации" }, { status: 400 })
 
     // Проверяем владельца
     const listing = await prisma.listing.findUnique({
       where: { id },
-      select: { id: true, userId: true, title: true, status: true, deletedAt: true },
+      select: { id: true, userId: true, title: true, status: true, deletedAt: true, vehicleId: true, partId: true },
     })
     if (!listing) return NextResponse.json({ error: "Объявление не найдено" }, { status: 404 })
     if (listing.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
     if (listing.status !== LISTING_STATUS.ACTIVE || listing.deletedAt) {
       return NextResponse.json({ error: "Продвижение доступно только активному объявлению" }, { status: 409 })
+    }
+    if (Boolean(listing.vehicleId) === Boolean(listing.partId)) {
+      return NextResponse.json({ error: "Продвижение доступно для объявлений о транспорте и запчастях" }, { status: 409 })
     }
 
     /* Выбор кассы. ЮKassa первая: Stripe не работает в России с 2022
@@ -61,12 +64,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       userId: session.user.id,
       promotionType: tariff.id.toUpperCase(),
     }
+    const returnPath = `/listings/${listing.id}/promote?order=${order.id}&payment=`
     if (yooConfig) {
       try {
         const payment = await createYookassaPayment(yooConfig, {
           amountRub: tariff.amountRub,
           description: `${tariff.title}: ${listing.title}`.slice(0, 128),
-          returnUrl: absoluteUrl(`/listings/${listing.id}/promote?payment=success`),
+          returnUrl: absoluteUrl(`${returnPath}success`),
           metadata,
           /* Ключ идемпотентности — id заказа: повтор запроса при обрыве
              сети не создаёт второй платёж на ту же покупку. */
@@ -109,8 +113,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             },
           },
         ],
-        success_url: absoluteUrl(`/listings/${listing.id}/promote?payment=success`),
-        cancel_url: absoluteUrl(`/listings/${listing.id}/promote?payment=canceled`),
+        success_url: absoluteUrl(`${returnPath}success`),
+        cancel_url: absoluteUrl(`${returnPath}canceled`),
         metadata,
         payment_intent_data: { metadata },
       })

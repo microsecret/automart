@@ -105,8 +105,8 @@ test("цена в сообщении берётся из тех же тариф�
   assert.doesNotMatch(rules, /199 рублей/)
 
   const sender = read("../src/lib/promotion-nudge.ts")
-  assert.match(sender, /priceRub: PROMOTION_TARIFFS\.CHATS\.amountRub/)
-  assert.match(sender, /planDays: PROMOTION_TARIFFS\.CHATS\.durationDays/)
+  assert.match(sender, /priceRub: PROMOTION_TARIFFS\.CHATS_DAILY\.amountRub/)
+  assert.match(sender, /planDays: PROMOTION_TARIFFS\.CHATS_DAILY\.durationDays/)
 
   // Переданная цена доходит до текста.
   const text = nudgeText({ index: 0, title: "Машина", views: 1, days: 8, priceRub: 777, planDays: 30 })

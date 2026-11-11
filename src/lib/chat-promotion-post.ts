@@ -265,33 +265,32 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
 export function buildPromotionOfferPost(options: {
   siteUrl: string
   chatCount: number
-  subscriberCount: number
-  priceRub: number
+  botUsername?: string | null
+  supportUsername: string
+  plans: ReadonlyArray<{ title: string; amountRub: number; durationDays: number }>
 }): { caption: string; buttons: PostButton[] } {
-  const subscribers = options.subscriberCount.toLocaleString("ru-RU")
-  const price = options.priceRub.toLocaleString("ru-RU")
-
   const caption = [
-    "📣 <b>Продаёте машину? Мы разместим её за вас</b>",
+    "🚘 <b>Покажите свой автомобиль покупателям в других городах</b>",
     "",
-    `Ваше объявление появится в <b>${options.chatCount} чатах</b> сети — это <b>${subscribers}</b> подписчиков в Уфе, Казани, Москве, Екатеринбурге, Тюмени и других городах.`,
+    `LeWheel опубликует ваше объявление во всех подключённых чатах авторынка (сейчас их ${options.chatCount}). В каждом посте — фотографии, цена и кнопка для связи с продавцом.`,
     "",
-    "✅ До 9 фотографий альбомом",
-    "✅ Кнопка «Написать продавцу» прямо в посте",
-    "✅ Закрепление поста в чате",
-    "✅ Повтор публикации весь месяц",
+    `📅 <b>Продвижение на ${options.plans[0]?.durationDays ?? 7} дней</b>`,
+    ...options.plans.map((plan) => `• ${plan.title} — <b>${plan.amountRub} ₽</b>`),
     "",
-    `💳 <b>${price} ₽ за месяц</b> — дешевле продвижения на других площадках.`,
-    "",
-    "Размещение объявления на сайте остаётся бесплатным.",
+    "Сначала разместите объявление бесплатно. Когда оно появится на сайте, откройте «Мои объявления», нажмите «Продвинуть» и оплатите выбранную частоту.",
+    `Вопросы по оплате — @${options.supportUsername}`,
   ].join("\n")
 
   const site = options.siteUrl.replace(/\/$/, "")
   return {
     caption,
     buttons: [
-      { text: "🚀 Подключить продвижение", url: `${site}/dashboard?tab=payments` },
-      { text: "➕ Разместить объявление бесплатно", url: `${site}/listings/create/vehicle` },
+      { text: "🚀 Выбрать объявление", url: options.botUsername
+        ? `https://t.me/${options.botUsername}?startapp=promote`
+        : `${site}/dashboard?tab=listings` },
+      { text: "➕ Подать объявление бесплатно", url: options.botUsername
+        ? `https://t.me/${options.botUsername}?startapp=create`
+        : `${site}/listings/create/vehicle` },
     ],
   }
 }

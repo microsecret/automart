@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text } from "@mantine/core"
 import { IconBrandTelegram, IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
-import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
+import { CHAT_PROMOTION_OPTIONS, PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 import { plural } from "@/lib/plural"
 import MetricCard from "@/components/ui/MetricCard"
 import ScenicBanner from "@/components/ui/ScenicBanner"
@@ -95,13 +95,13 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
              продвижение, не называл ни цен, ни выгоды — и не продавал. */
           <Stack gap="md" py="sm">
             <Stack align="center" gap={4} ta="center">
-              <Text fw={700}>Поднимите объявление — его увидят первым</Text>
+              <Text fw={700}>Продвижение в городских чатах LeWheel</Text>
               <Text size="sm" c="dimmed" maw={460}>
-                Продвинутые объявления показываются выше в поиске. Оплата картой, включение сразу после оплаты.
+                Выберите своё активное объявление и частоту публикаций. Оплата картой за 7 дней.
               </Text>
             </Stack>
             <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-              {Object.values(PROMOTION_TARIFFS).map((tariff) => (
+              {CHAT_PROMOTION_OPTIONS.map((tariff) => (
                 <Paper key={tariff.id} radius="md" p="md" withBorder>
                   <Stack gap={4}>
                     <Text fw={800} fz="sm">{tariff.title}</Text>

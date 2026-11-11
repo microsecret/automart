@@ -1,62 +1,48 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Divider, Skeleton } from "@mantine/core"
-import { IconBrandTelegram, IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
+import { IconBrandTelegram, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
-import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
+import { CHAT_PROMOTION_OPTIONS, PROMOTION_PAYMENT_SUPPORT } from "@/lib/promotion-tariffs"
+import { useTelegramSession } from "@/lib/use-telegram-session"
 
 type ListingViewsResponse = { views: number }
 type PromoteResponse = { checkoutUrl: string }
-
-const PROMO_OPTIONS = [
-  /* Показ в чатах стоит первым: он дешевле остальных и даёт охват,
-     которого нет у продвижения внутри каталога — сто четырнадцать тысяч
-     подписчиков одиннадцати региональных групп. Для продавца это самое
-     понятное предложение, и прятать его за более дорогими незачем. */
-  {
-    ...PROMOTION_TARIFFS.CHATS,
-    desc: PROMOTION_TARIFFS.CHATS.description,
-    price: PROMOTION_TARIFFS.CHATS.amountRub,
-    days: PROMOTION_TARIFFS.CHATS.durationDays,
-    icon: IconBrandTelegram,
-    color: "#0088cc",
-    bg: "#e7f5ff",
-    features: [
-      "Все чаты авторынка сети по городам",
-      "Повтор каждые двое суток весь месяц",
-      "До 9 фотографий альбомом",
-      "Кнопка «Написать продавцу» в посте",
-      "Закрепление поста в чате",
-    ],
-  },
-  { ...PROMOTION_TARIFFS.BOOST, desc: PROMOTION_TARIFFS.BOOST.description, price: PROMOTION_TARIFFS.BOOST.amountRub, days: PROMOTION_TARIFFS.BOOST.durationDays, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", features: ["Поднятие в топ выдачи", "Статистика просмотров"] },
-  { ...PROMOTION_TARIFFS.PREMIUM, desc: PROMOTION_TARIFFS.PREMIUM.description, price: PROMOTION_TARIFFS.PREMIUM.amountRub, days: PROMOTION_TARIFFS.PREMIUM.durationDays, icon: IconFlame, color: "#ea580c", bg: "var(--market-warning-surface)", features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом"] },
-  { ...PROMOTION_TARIFFS.VIP, desc: PROMOTION_TARIFFS.VIP.description, price: PROMOTION_TARIFFS.VIP.amountRub, days: PROMOTION_TARIFFS.VIP.durationDays, icon: IconStar, color: "#1c4291", bg: "#f5f3ff", features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP"] },
-]
+const supportUrl = `https://t.me/${PROMOTION_PAYMENT_SUPPORT}`
 
 export default function PromotePage() {
   const { id } = useParams<{ id: string }>()
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null)
+  const insideMiniApp = useTelegramSession()
   /* Что показывать после возвращения из кассы: ждём подтверждения или
      продвижение уже включилось. */
   const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending" | "unknown">("idle")
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [pending, startTransition] = useTransition()
+  const [pending, setPending] = useState(false)
+  const submitting = useRef(false)
   const { data: listing, error: listingError, isLoading: isListingLoading, mutate: reloadViews } = useSWR<ListingViewsResponse>(
     id ? `/api/listings/${id}/views` : null,
     fetchJson,
   )
 
-  const selectedOption = PROMO_OPTIONS.find((o) => o.id === selected)
+  const selectedOption = CHAT_PROMOTION_OPTIONS.find((o) => o.id === selected)
 
   useEffect(() => {
-    setPaymentStatus(new URLSearchParams(window.location.search).get("payment"))
+    const query = new URLSearchParams(window.location.search)
+    setPaymentStatus(query.get("payment"))
+    setOrderId(query.get("order"))
+    const option = CHAT_PROMOTION_OPTIONS.find((plan) => plan.id === query.get("tariff"))
+    if (option) {
+      setSelected(option.id)
+      setModalOpen(true)
+    }
   }, [])
 
   /* Проверяем оплату сразу, как человек вернулся.
@@ -81,7 +67,7 @@ export default function PromotePage() {
         const response = await fetch("/api/payment/check", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ listingId: id }),
+          body: JSON.stringify({ listingId: id, orderId }),
         })
         const payload = await response.json().catch(() => null)
         if (cancelled) return
@@ -111,26 +97,44 @@ export default function PromotePage() {
 
     void attempt(0)
     return () => { cancelled = true }
-  }, [paymentStatus, id, reloadViews])
+  }, [paymentStatus, id, orderId, reloadViews])
 
   const handleSelect = (id: string) => {
     setSelected(id)
     setModalOpen(true)
   }
 
-  const handlePay = () => {
-    startTransition(async () => {
-      try {
-        const result = await fetchJson<PromoteResponse>(`/api/listings/${id}/promote`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tariff: selected }),
-        })
-        window.location.assign(result.checkoutUrl)
-      } catch (e) {
-        notifications.show({ title: "Оплата недоступна", message: e instanceof Error ? e.message : "Не удалось открыть безопасную оплату", color: "red" })
-      }
-    })
+  const openCheckoutSite = (option: string) => {
+    const url = new URL(window.location.pathname, window.location.origin)
+    url.searchParams.set("tariff", option)
+    const app = window.Telegram?.WebApp
+    if (app?.openLink) app.openLink(url.toString())
+    else window.open(url.toString(), "_blank", "noopener,noreferrer")
+  }
+
+  const handlePay = async () => {
+    if (!selectedOption || submitting.current) return
+    if (insideMiniApp || window.Telegram?.WebApp?.initData) {
+      openCheckoutSite(selectedOption.id)
+      return
+    }
+    submitting.current = true
+    setPending(true)
+    try {
+      const result = await fetchJson<PromoteResponse>(`/api/listings/${id}/promote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tariff: selectedOption.id }),
+      })
+      window.location.assign(result.checkoutUrl)
+    } catch (e) {
+      submitting.current = false
+      setPending(false)
+      notifications.show({
+        title: "Оплата недоступна", color: "red",
+        message: <>{e instanceof Error ? e.message : "Не удалось открыть оплату"}<br /><a href={supportUrl} target="_blank" rel="noreferrer">Написать администратору</a></>,
+      })
+    }
   }
 
   if (listingError) {
@@ -154,7 +158,7 @@ export default function PromotePage() {
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconChartBar size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Продвижение объявления</Text>
-            <Text size="xs" c="var(--market-muted)">Поднимите активное объявление выше в каталоге</Text>
+            <Text size="xs" c="var(--market-muted)">Выберите частоту публикаций в Telegram</Text>
           </Stack>
         </Group>
 
@@ -168,8 +172,8 @@ export default function PromotePage() {
                   : checkState === "unknown"
                     ? "Не видим подтверждения оплаты. Если деньги списаны — напишите в поддержку, проверим вручную."
                   : checkState === "checking"
-                    ? "Платёж принят, проверяем подтверждение кассы…"
-                    : "Платёж принят. Продвижение включится в течение нескольких минут — страницу можно закрыть."}
+                    ? "Проверяем подтверждение кассы…"
+                    : "Ждём подтверждение кассы. Статус можно проверить в разделе «Оплаты»."}
               </Text>
             </Group>
           </Paper>
@@ -193,81 +197,29 @@ export default function PromotePage() {
           </Paper>
         )}
 
-        {/* Четыре тарифа в сетке из трёх колонок ломали ряд: четвёртый
-            падал вниз в одиночку и выглядел довеском, а не равным
-            вариантом. Две колонки на среднем экране и четыре на широком
-            держат ряд целым при любой ширине. */}
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-          {PROMO_OPTIONS.map((opt) => {
-            const Icon = opt.icon
-            // Выбранный тариф остаётся выделенным цветом тарифа, а наведение отдано
-            // CSS: JS-обработчик стирал рамку выбранного варианта, когда курсор уходил
-            // с соседней карточки, и пользователь терял из виду, за что платит.
-            return (
-              <Paper key={opt.id} radius="md" p="md" withBorder className="market-linked-card"
-                style={{
-                  /* Рекомендованный тариф обведён заметнее остальных даже
-                     когда ничего не выбрано: в ряду из четырёх одинаковых
-                     карточек взгляду не за что зацепиться. */
-                  borderColor: selected === opt.id ? opt.color : opt.id === "premium" ? "var(--market-primary)" : undefined,
-                  borderWidth: selected === opt.id || opt.id === "premium" ? 2 : undefined,
-                  cursor: "pointer",
-                  position: "relative",
-                }}>
-                {/* Метка стоит на «Премиум», а не на самом дорогом тарифе.
-
-                    «Выгодно» на VIP не помогало выбрать: человек и так видит,
-                    что это верх линейки, а подсказка на самом дорогом читается
-                    как попытка продать подороже. Отметка нужна на среднем
-                    варианте — она снимает вопрос «с чего начать» у того, кто
-                    впервые продвигает объявление. */}
-                {opt.id === "premium" && (
-                  <Badge pos="absolute" top={-9} left="50%" size="sm" color="indigo" variant="filled"
-                    style={{ transform: "translateX(-50%)", whiteSpace: "nowrap" }}>
-                    Выбирают чаще всего
-                  </Badge>
-                )}
-                <Stack gap="sm">
-                  <Group justify="space-between" align="flex-start">
-                    <Box style={{ width: 44, height: 44, borderRadius: 10, background: opt.bg, display: "flex", alignItems: "center", justifyContent: "center", color: opt.color }}>
-                      <Icon size={22} />
-                    </Box>
-                    {/* Срок — служебная величина, а не отличие тарифа: цвет
-                        ей ни к чему. Раньше срок раскрашивался в тот же цвет,
-                        что и кнопка, и ряд получал восемь цветных пятен. */}
-                    <Badge variant="light" color="gray" size="xs">{opt.days} дн.</Badge>
-                  </Group>
-                  <Stack gap={4}>
-                    <Text fw={700} fz="md" c="var(--market-ink)">{opt.title}</Text>
-                    <Text size="xs" c="var(--market-muted)" lh={1.4}>{opt.desc}</Text>
-                  </Stack>
-                  <Stack gap={4}>
-                    {opt.features.map((f) => (
-                      <Group key={f} gap={6}><IconCheck size={13} color={opt.color} /><Text size="xs" c="var(--market-ink-soft)">{f}</Text></Group>
-                    ))}
-                  </Stack>
-                  <Divider my={2} />
-                  <Group justify="space-between" align="center">
-                    <Text fw={800} fz="xl" c="var(--market-ink)" ff="var(--font-display),sans-serif">{opt.price} ₽</Text>
-                    {/* Кнопка одна на все тарифы, а не своего цвета у каждого.
-
-                        Четыре разноцветные кнопки в ряду означали четыре
-                        разных действия, хотя действие одно — выбрать тариф.
-                        Различать варианты должны значок, название и цена, а
-                        не цвет кнопки. Выделен только рекомендованный: он
-                        залит, остальные обведены. */}
-                    <Button
-                      size="sm"
-                      variant={opt.id === "premium" ? "filled" : "default"}
-                      onClick={() => handleSelect(opt.id)}
-                    >
-                      Выбрать
-                    </Button>
-                  </Group>
-                </Stack>
-              </Paper>
-            )
-          })}
+        <Paper radius="md" p="md" withBorder>
+          <Stack gap={4}>
+            <Text fw={700}>Ваше объявление увидят в городских чатах LeWheel</Text>
+            <Text size="sm" c="dimmed">Семь дней показов во всех подключённых чатах. В публикации — до девяти фото, ссылка на объявление и кнопка связи с продавцом.</Text>
+          </Stack>
+        </Paper>
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+          {CHAT_PROMOTION_OPTIONS.map((option, index) => (
+            <Paper key={option.id} radius="md" p="md" withBorder>
+              <Stack gap="sm">
+                <Group justify="space-between">
+                  <ThemeIcon color="teal" variant="light" size={40} radius="md"><IconBrandTelegram size={22} /></ThemeIcon>
+                  <Badge color="gray" variant="light">{option.durationDays} дней</Badge>
+                </Group>
+                <Text fw={700}>{option.title}</Text>
+                <Text size="sm" c="dimmed">{option.description}</Text>
+                <Text fw={800} fz="xl">{option.amountRub} ₽</Text>
+                <Button color="teal" variant={index === 0 ? "filled" : "light"} onClick={() => insideMiniApp || window.Telegram?.WebApp?.initData ? openCheckoutSite(option.id) : handleSelect(option.id)}>
+                  {insideMiniApp ? "К оплате на сайте" : "Выбрать"}
+                </Button>
+              </Stack>
+            </Paper>
+          ))}
         </SimpleGrid>
 
         <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
@@ -275,6 +227,9 @@ export default function PromotePage() {
             <IconShieldCheck size={20} color="#059669" />
             <Text size="xs" c="var(--market-success-text)">Продвижение включается только после подтверждения оплаты платёжной системой.</Text>
           </Group>
+          <Button component="a" href={supportUrl} target="_blank" rel="noreferrer" size="compact-sm" variant="subtle" color="teal" mt="xs">
+            Вопросы по оплате · @{PROMOTION_PAYMENT_SUPPORT}
+          </Button>
         </Paper>
       </Stack>
 
@@ -285,12 +240,12 @@ export default function PromotePage() {
               <>
                 <Group justify="space-between" align="center">
                   <Stack gap={2}><Text size="xs" c="var(--market-muted)">Тариф</Text><Text fw={600} c="var(--market-ink)">{selectedOption.title}</Text></Stack>
-                  <Badge size="lg" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} variant="light">{selectedOption.days} дней</Badge>
+                  <Badge size="lg" color="teal" variant="light">{selectedOption.durationDays} дней</Badge>
                 </Group>
                 <Divider />
-                <Group justify="space-between"><Text size="sm" c="var(--market-muted)">Стоимость</Text><Text fw={800} fz="xl" c="var(--market-ink)">{selectedOption.price} ₽</Text></Group>
-                <Button fullWidth size="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
-                  Оплатить {selectedOption.price} ₽
+                <Group justify="space-between"><Text size="sm" c="var(--market-muted)">Стоимость</Text><Text fw={800} fz="xl" c="var(--market-ink)">{selectedOption.amountRub} ₽</Text></Group>
+                <Button fullWidth size="md" color="teal" leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
+                  Оплатить {selectedOption.amountRub} ₽
                 </Button>
                 <Text size="xs" c="var(--market-muted)" ta="center">После нажатия откроется защищённая платёжная страница. Тариф активируется только после подтверждённой оплаты.</Text>
               </>

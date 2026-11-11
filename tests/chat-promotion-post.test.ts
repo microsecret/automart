@@ -134,19 +134,25 @@ test("подпись не превышает предел Telegram", () => {
   assert.ok(post.caption.length <= 1024)
 })
 
-test("рекламный пост называет охват и цену", () => {
-  // Продавец решает по двум цифрам: сколько увидят и сколько стоит.
-  const offer = buildPromotionOfferPost({ siteUrl: SITE, chatCount: 11, subscriberCount: 114_575, priceRub: 300 })
-  assert.match(offer.caption, /11 чатах/)
-  assert.match(offer.caption, /114 575/)
-  assert.match(offer.caption, /300 ₽/)
+test("рекламный пост называет число чатов, срок и цену", () => {
+  const offer = buildPromotionOfferPost({
+    siteUrl: SITE, chatCount: 18, supportUsername: "payment_admin",
+    plans: [{ title: "1 публикация в сутки", amountRub: 300, durationDays: 7 }],
+  })
+  assert.match(offer.caption, /сейчас их 18/)
+  assert.match(offer.caption, /300 ₽/)
+  assert.match(offer.caption, /7 дней/)
+  assert.match(offer.caption, /@payment_admin/)
   assert.match(offer.caption, /бесплатн/)
+  assert.ok(offer.caption.length <= 1024)
 })
 
-test("рекламный пост ведёт в кабинет и на размещение", () => {
-  const offer = buildPromotionOfferPost({ siteUrl: SITE, chatCount: 11, subscriberCount: 114_575, priceRub: 300 })
-  assert.ok(offer.buttons.some((b) => b.url.includes("/dashboard")))
-  assert.ok(offer.buttons.some((b) => b.url.includes("/listings/create")))
+test("обе кнопки рекламного поста открывают Mini App", () => {
+  const offer = buildPromotionOfferPost({ siteUrl: SITE, chatCount: 18, botUsername: "lewheelbot", supportUsername: "payment_admin", plans: [] })
+  assert.deepEqual(offer.buttons.map((button) => button.url), [
+    "https://t.me/lewheelbot?startapp=promote",
+    "https://t.me/lewheelbot?startapp=create",
+  ])
 })
 
 test("объявлением можно поделиться в один тап", () => {

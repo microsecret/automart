@@ -7,8 +7,7 @@
  * превратить ленты в спам: из чата, забитого объявлениями, подписчики
  * уходят, и продвижение перестаёт стоить своих денег.
  *
- * Отсюда правила: повтор не чаще раза в двое суток на чат, закреп по
- * очереди (место закрепа в группе одно), пауза между отправками.
+ * Интервал повтора берётся из оплаченного тарифа.
  */
 
 import { prisma } from "@/lib/prisma"
@@ -16,9 +15,9 @@ import { telegramApi, telegramPhotoApi, getTelegramBotUsername, type TelegramUpl
 import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 import { absoluteUrl } from "@/lib/site-url"
 import { buildChatPost, type PromotedListing } from "@/lib/chat-promotion-post"
+import { CHAT_PROMOTION_TARIFF_IDS, LEGACY_CHAT_REPOST_MS, chatPromotionInterval } from "@/lib/promotion-tariffs"
 
-/** Не чаще раза в двое суток на чат: иначе лента превращается в спам. */
-export const REPOST_INTERVAL_MS = 2 * 24 * 60 * 60 * 1000
+export const REPOST_INTERVAL_MS = LEGACY_CHAT_REPOST_MS
 
 /** Пауза между чатами: Telegram допускает около двадцати сообщений в минуту. */
 const CHAT_PAUSE_MS = 3_500
@@ -161,7 +160,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
      отсекает запрос, а очередь из тех, кому пора, собирается ниже. */
   const allOrders = await prisma.promotionOrder.findMany({
     where: {
-      tariffId: "chats",
+      tariffId: { in: CHAT_PROMOTION_TARIFF_IDS },
       status: "PAID",
       promoUntil: { gt: now },
       listing: { status: "ACTIVE", deletedAt: null },
@@ -170,9 +169,13 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
     select: {
       id: true,
       listingId: true,
+      userId: true,
+      tariffId: true,
+      promoUntil: true,
+      durationDays: true,
       listing: {
         select: {
-          id: true, title: true, price: true, status: true, deletedAt: true,
+          id: true, userId: true, title: true, price: true, status: true, deletedAt: true,
           vehicle: { select: { id: true, year: true, mileage: true, power: true, fuelType: true, transmission: true, images: true, location: true } },
           part: { select: { id: true, images: true, location: true, condition: true, oemNumber: true, brandName: true, make: true, model: true, yearFrom: true, yearTo: true, availability: true } },
           user: { select: { telegramId: true } },
@@ -207,9 +210,23 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
       order: { listingId: { in: [...new Set(allOrders.map((order) => order.listingId))] } },
       publishedAt: { gt: new Date(now.getTime() - REPOST_INTERVAL_MS) },
     },
-    select: { order: { select: { listingId: true } }, chatId: true },
+    select: { order: { select: { listingId: true } }, chatId: true, publishedAt: true },
   })
-  const postedRecently = new Set(recentPosts.map((post) => `${post.order.listingId}:${post.chatId}`))
+  const lastPublished = new Map<string, number>()
+  for (const post of recentPosts) {
+    const key = `${post.order.listingId}:${post.chatId}`
+    lastPublished.set(key, Math.max(lastPublished.get(key) ?? 0, +post.publishedAt))
+  }
+  const isDue = (order: (typeof allOrders)[number], chatId: string) => {
+    const latest = lastPublished.get(`${order.listingId}:${chatId}`)
+    if (!latest) return true
+    const interval = chatPromotionInterval(order.tariffId)
+    if (interval === LEGACY_CHAT_REPOST_MS) return +now - latest >= interval
+    const startsAt = +order.promoUntil! - order.durationDays * 86_400_000
+    // Keep each seven-day window on its schedule despite small worker delays.
+    const slotStartedAt = startsAt + Math.floor((+now - startsAt) / interval) * interval
+    return latest < slotStartedAt && +now - latest >= interval - 15 * 60 * 1000
+  }
 
   /* В работу — только те, кому есть куда публиковаться: хотя бы один чат
      без свежего поста этого объявления. Предел на проход сохраняется — он
@@ -219,7 +236,8 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
     // Unsupported/ambiguous legacy records must not occupy the bounded batch
     // forever and starve valid paid vehicle or parts orders after them.
     .filter((order) => Boolean(order.listing?.vehicle) !== Boolean(order.listing?.part))
-    .filter((order) => chats.some((chat) => !postedRecently.has(`${order.listingId}:${chat.id}`)))
+    .filter((order) => order.userId === order.listing.userId && order.promoUntil
+      && +order.promoUntil - order.durationDays * 86_400_000 <= +now)
     // Input is oldest-paid first: keep that order as the honest publication
     // attribution, but do not let its renewal occupy another bounded slot.
     .filter((order) => {
@@ -227,6 +245,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
       selectedListings.add(order.listingId)
       return true
     })
+    .filter((order) => chats.some((chat) => isDue(order, chat.id)))
     .slice(0, maxOrders)
 
   for (const order of orders) {
@@ -263,8 +282,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
     const post = buildChatPost(listing, { siteUrl, botUsername: botUsername || undefined })
 
     for (const chat of chats) {
-      /* То же объявление в тот же чат — не чаще раза в двое суток. */
-      if (postedRecently.has(`${order.listingId}:${chat.id}`)) continue
+      if (!isDue(order, chat.id)) continue
 
       const result = await publishToChat(chat.id, post)
       if (!result.messageId) {
@@ -277,7 +295,6 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
       await prisma.chatPromotionPost.create({
         data: { orderId: order.id, chatId: chat.id, messageId: result.messageId, pinned: wasPinned },
       })
-      postedRecently.add(`${order.listingId}:${chat.id}`)
 
       published += 1
       if (wasPinned) pinned += 1
@@ -305,7 +322,7 @@ export async function cleanupExpiredChatPromotions() {
   // before the cleanup batch limit; retained renewals must not starve cleanup.
   const ongoingOrders = await prisma.promotionOrder.findMany({
     where: {
-      tariffId: "chats", status: "PAID", promoUntil: { gt: now },
+      tariffId: { in: CHAT_PROMOTION_TARIFF_IDS }, status: "PAID", promoUntil: { gt: now },
       listing: { status: "ACTIVE", deletedAt: null },
     },
     select: { listingId: true, userId: true, listing: { select: { userId: true } } },
@@ -352,7 +369,7 @@ export async function notifyExpiringChatPromotions() {
 
   const allOrders = await prisma.promotionOrder.findMany({
     where: {
-      tariffId: "chats",
+      tariffId: { in: CHAT_PROMOTION_TARIFF_IDS },
       status: "PAID",
       // Read the full remaining entitlement, not just orders ending soon:
       // a later paid renewal can already extend this same listing's term.

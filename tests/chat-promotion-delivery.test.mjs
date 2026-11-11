@@ -9,9 +9,13 @@ const compile = (path) => ts.transpileModule(readFileSync(new URL(path, import.m
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText
 const builder = encode(compile("../src/lib/chat-promotion-post.ts"))
+const tariffs = encode(compile("../src/lib/promotion-tariffs.ts"))
 const part = (id, photos = []) => ({ id, images: JSON.stringify(photos), location: "Казань", condition: "NEW", oemNumber: "OEM-123", brandName: "Brand", make: "Toyota", model: "Camry", yearFrom: 2014, yearTo: 2017, availability: "IN_STOCK" })
-const listing = (subject) => ({ id: "listing-" + subject.id, title: "Фара", price: 7000, status: "ACTIVE", deletedAt: null, vehicle: null, part: subject, user: { telegramId: "seller-telegram" } })
-const order = (id, data) => ({ id, listingId: data.id, listing: data })
+const listing = (subject) => ({ id: "listing-" + subject.id, userId: "owner", title: "Фара", price: 7000, status: "ACTIVE", deletedAt: null, vehicle: null, part: subject, user: { telegramId: "seller-telegram" } })
+const order = (id, data, overrides = {}) => ({
+  id, listingId: data.id, listing: data, userId: data.userId, tariffId: "chats",
+  promoUntil: new Date(Date.now() + 86_400_000), durationDays: 30, ...overrides,
+})
 
 async function fixture(orders, recent = [], cleanup = {}) {
   const calls = []
@@ -21,7 +25,7 @@ async function fixture(orders, recent = [], cleanup = {}) {
   globalThis[key] = {
     prisma: {
       promotionOrder: { findMany: async (query) => {
-        assert.equal(query.where.tariffId, "chats")
+        assert.deepEqual(query.where.tariffId.in, ["chats", "chats_daily", "chats_twice", "chats_thrice"])
         if (query.select.listing.select.part) return orders
         assert.equal(query.where.listing.status, "ACTIVE")
         assert.equal(query.where.listing.deletedAt, null)
@@ -42,6 +46,7 @@ async function fixture(orders, recent = [], cleanup = {}) {
           assert.equal(query.where.orderId, undefined, "recent publications include expired older orders")
           assert.equal(query.where.order.promoUntil, undefined)
           return recent.filter((row) => query.where.order.listingId.in.includes(row.order.listingId))
+            .map((row) => ({ publishedAt: new Date(), ...row }))
         },
         create: async ({ data }) => { posts.push(data); return data },
         update: async () => {},
@@ -60,7 +65,8 @@ async function fixture(orders, recent = [], cleanup = {}) {
     schedule: (callback) => { callback(); return 0 },
   }
   const shim = encode(`export const {prisma,telegramApi,telegramPhotoApi,getTelegramBotUsername,readLocalPhotos,photoMime,absoluteUrl}=globalThis[${JSON.stringify(key)}]`)
-  const source = compile("../src/lib/chat-promotion-delivery.ts").replace(/from "(@\/lib\/[^"]+)"/g, (_match, name) => `from ${JSON.stringify(name.endsWith("chat-promotion-post") ? builder : shim)}`)
+  const imports = { "chat-promotion-post": builder, "promotion-tariffs": tariffs }
+  const source = compile("../src/lib/chat-promotion-delivery.ts").replace(/from "@\/lib\/([^"]+)"/g, (_match, name) => `from ${JSON.stringify(imports[name] || shim)}`)
   const { runChatPromotionDelivery, cleanupExpiredChatPromotions, notifyExpiringChatPromotions, REPOST_INTERVAL_MS } = await import(encode(`const setTimeout=globalThis[${JSON.stringify(key)}].schedule;\n${source}`))
   return { runChatPromotionDelivery, cleanupExpiredChatPromotions, notifyExpiringChatPromotions, REPOST_INTERVAL_MS, calls, posts, notices, dispose: () => { delete globalThis[key] } }
 }
@@ -100,6 +106,30 @@ test("unsupported legacy subjects before the batch cannot starve a valid paid pa
 test("recent paid part publication retains the existing per-chat cooldown", async () => {
   const f = await fixture([order("paid-part", listing(part("part-123")))], [{ orderId: "paid-part", chatId: "chat-1", order: { listingId: "listing-part-123" } }])
   try { assert.equal((await f.runChatPromotionDelivery()).published, 0); assert.equal(f.calls.length, 0) } finally { f.dispose() }
+})
+
+test("nine hours later, only the three-post plan is due", async () => {
+  const planIds = ["chats_daily", "chats_twice", "chats_thrice"]
+  const now = Date.now()
+  const orders = planIds.map((tariffId) => order(tariffId, listing(part(tariffId)), {
+    tariffId, durationDays: 7, promoUntil: new Date(now + 6 * 86_400_000),
+  }))
+  const recent = orders.map(({ listingId }) => ({
+    chatId: "chat-1", order: { listingId }, publishedAt: new Date(now - 9 * 3_600_000),
+  }))
+  const f = await fixture(orders, recent)
+  try {
+    assert.equal((await f.runChatPromotionDelivery()).published, 1)
+    assert.equal(f.posts[0].orderId, "chats_thrice")
+  } finally { f.dispose() }
+})
+
+test("a paid renewal waits for the previous term to end", async () => {
+  const renewal = order("renewal", listing(part("new")), {
+    tariffId: "chats_twice", durationDays: 7, promoUntil: new Date(Date.now() + 8 * 86_400_000),
+  })
+  const f = await fixture([renewal])
+  try { assert.equal((await f.runChatPromotionDelivery()).published, 0) } finally { f.dispose() }
 })
 
 test("two active orders for one listing produce one post and do not starve the next listing", async () => {

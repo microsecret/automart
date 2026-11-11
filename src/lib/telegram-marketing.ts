@@ -3,9 +3,18 @@ import { absoluteUrl } from "@/lib/site-url"
 import { getTelegramBotUsername, isTelegramChatAdministrator, telegramApi, telegramPhotoApi } from "@/lib/telegram"
 import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 import { buildCommunityPost, communityChatUrl, communityIntervalMs } from "@/lib/telegram-community-post"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { buildPromotionOfferPost } from "@/lib/chat-promotion-post"
+import { CHAT_PROMOTION_OPTIONS, PROMOTION_PAYMENT_SUPPORT } from "@/lib/promotion-tariffs"
+import { yookassaConfig } from "@/lib/yookassa"
 
 const PROMO_BATCH_SIZE = 20
 type SentMessage = { message_id: number; photo?: Array<{ file_id: string }> }
+const PROMOTION_IMAGE = path.join(process.cwd(), "public", "images", "telegram", "promo-chats-week.jpg")
+const ONE_WEEK_MS = 604_800_000
+// Unix time starts on Thursday. Shift to Monday at midnight in Moscow.
+const marketingWeek = (time: Date) => Math.floor((+time + 3 * 86_400_000 + 3 * 3_600_000) / ONE_WEEK_MS)
 
 export async function registerTelegramGroup(chat: { id: number | string; type: string; title?: string }) {
   if (chat.type !== "group" && chat.type !== "supergroup") return
@@ -34,7 +43,20 @@ export async function processTelegramMarketingCampaign() {
   // Only an operator-configured local upload, never a user-supplied URL.
   const imagePath = /^\/uploads\/[A-Za-z0-9._-]+$/.test(image) && !image.includes("..") ? image : ""
   const imageData = imagePath ? (await readLocalPhotos([imagePath])).get(imagePath) : undefined
+  const now = new Date()
+  const week = marketingWeek(now)
+  const promotionImage = chats.some((chat) => !chat.lastPromoAt || marketingWeek(chat.lastPromoAt) < week)
+    && (yookassaConfig() || process.env.STRIPE_SECRET_KEY)
+    ? await readFile(PROMOTION_IMAGE).catch(() => null) : null
+  const offer = promotionImage ? buildPromotionOfferPost({
+    siteUrl: absoluteUrl("/"),
+    chatCount: await prisma.telegramChat.count({ where: { active: true, marketingEnabled: true } }),
+    botUsername: getTelegramBotUsername(),
+    supportUsername: PROMOTION_PAYMENT_SUPPORT,
+    plans: CHAT_PROMOTION_OPTIONS,
+  }) : null
   let photoFileId: string | undefined
+  let promotionFileId: string | undefined
   let delivered = 0, failed = 0, skipped = 0
   for (const chat of chats) {
     const claimedAt = new Date()
@@ -45,6 +67,20 @@ export async function processTelegramMarketingCampaign() {
     if (claimed.count !== 1) continue
     try {
       if (!(await isTelegramChatAdministrator(chat.id))) { skipped += 1; continue }
+      if (offer && promotionImage && (!chat.lastPromoAt || marketingWeek(chat.lastPromoAt) < week)) {
+        const sent = await telegramPhotoApi<SentMessage>({
+          chat_id: chat.id, parse_mode: "HTML", caption: offer.caption,
+          disable_notification: true,
+          reply_markup: { inline_keyboard: offer.buttons.map((button) => [button]) },
+          ...(promotionFileId ? { photo: promotionFileId } : {}),
+        }, {
+          uploads: promotionFileId ? [] : [{ field: "photo", filename: "promo-chats-week.jpg", contentType: "image/jpeg", data: promotionImage }],
+        })
+        promotionFileId = sent.photo?.at(-1)?.file_id || promotionFileId
+        await prisma.telegramChat.update({ where: { id: chat.id }, data: { lastPromoMessage: sent.message_id, lastError: null } })
+        delivered += 1
+        continue
+      }
       const details = await telegramApi<{ id: number | string; username?: string; invite_link?: string }>("getChat", { chat_id: chat.id })
       // Never export/create a link or accidentally share another chat.
       const chatUrl = String(details.id) === chat.id ? communityChatUrl(details) : null
@@ -69,7 +105,7 @@ export async function processTelegramMarketingCampaign() {
       // an accepted photo whose response was lost.
       const inactive = /kicked|chat not found|bot was blocked|forbidden/i.test(error instanceof Error ? error.message : "")
       await prisma.telegramChat.update({ where: { id: chat.id }, data: {
-        lastError: "Не удалось отправить приглашение в сообщество", ...(inactive ? { active: false } : {}),
+        lastError: "Не удалось отправить сообщение в чат", ...(inactive ? { active: false } : {}),
       } }).catch(() => undefined)
       failed += 1
     }

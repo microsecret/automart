@@ -10,7 +10,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
-import type { PromotionTariff } from "@/lib/promotion-tariffs"
+import { CHAT_PROMOTION_TARIFF_IDS, type PromotionTariff } from "@/lib/promotion-tariffs"
 import { accrueReferralReward } from "@/lib/referral-accrual"
 
 export type PromotionPaymentInput = {
@@ -88,11 +88,12 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
       return "listing_inactive"
     }
 
-    const isChatPromotion = tariff.id === "chats"
+    const isChatPromotion = CHAT_PROMOTION_TARIFF_IDS.some((id) => id === tariff.id)
+    const termStartsAt = "postsPerDay" in tariff ? new Date() : paymentCreatedAt
     const previousChatOrder = isChatPromotion ? await tx.promotionOrder.findFirst({
       where: {
-        listingId, userId, tariffId: tariff.id, status: "PAID", id: { not: orderId },
-        promoUntil: { gt: paymentCreatedAt },
+        listingId, userId, tariffId: { in: CHAT_PROMOTION_TARIFF_IDS }, status: "PAID", id: { not: orderId },
+        promoUntil: { gt: termStartsAt },
       },
       orderBy: { promoUntil: "desc" }, select: { promoUntil: true },
     }) : null
@@ -100,7 +101,7 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
     // Legacy chat orders keep their stored terms; this read does not mutate them.
     const previousExpiry = isChatPromotion ? previousChatOrder?.promoUntil
       : current.promoType === tariff.id ? current.promoUntil : null
-    const anchor = previousExpiry && previousExpiry > paymentCreatedAt ? previousExpiry : paymentCreatedAt
+    const anchor = previousExpiry && previousExpiry > termStartsAt ? previousExpiry : termStartsAt
     const promoUntil = new Date(anchor.getTime() + tariff.durationDays * 86_400_000)
     await tx.promotionOrder.update({ where: { id: orderId }, data: { promoUntil } })
     if (!isChatPromotion) {

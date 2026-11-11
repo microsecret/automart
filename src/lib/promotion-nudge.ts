@@ -19,7 +19,7 @@
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { prisma } from "@/lib/prisma"
-import { getTelegramMiniAppUrl, telegramApi, telegramPhotoApi } from "@/lib/telegram"
+import { getTelegramBotUsername, telegramApi, telegramPhotoApi } from "@/lib/telegram"
 import { markTelegramContactBlocked } from "@/lib/telegram-contacts"
 import { absoluteUrl } from "@/lib/site-url"
 import { getChatNetworkStats } from "@/lib/chat-network-stats"
@@ -32,7 +32,7 @@ import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 const BATCH_SIZE = 25
 
 /** Баннер сети чатов: сцена scenic-v1/sell с подписью, без чисел — числа живые и идут в тексте. */
-const PROMO_BANNER = path.join(process.cwd(), "public", "images", "telegram", "promo-chats.jpg")
+const PROMO_BANNER = path.join(process.cwd(), "public", "images", "telegram", "promo-chats-week.jpg")
 
 export type PromotionNudgeResult = {
   checked: number
@@ -47,11 +47,11 @@ function nudgeKeyboard(listingId: string) {
      искать её в кабинете значит потерять половину тех, кто согласился. */
   const promotePath = `/listings/${listingId}/promote`
   const rows: Array<Array<Record<string, unknown>>> = []
-  const miniAppUrl = getTelegramMiniAppUrl()
-  if (miniAppUrl) rows.push([{ text: "🚀 Продвинуть объявление", web_app: { url: new URL(promotePath, miniAppUrl).toString() } }])
+  const botUsername = getTelegramBotUsername()
+  if (botUsername) rows.push([{ text: "🚀 Продвинуть в Mini App", url: `https://t.me/${botUsername}?startapp=promote_${encodeURIComponent(listingId)}` }])
   /* Та же страница на сайте — для тех, у кого приложение не открывается,
      и для тех, кто хочет сравнить тарифы на большом экране. */
-  rows.push([{ text: "💎 Все тарифы на сайте", url: absoluteUrl(promotePath) }])
+  if (!botUsername) rows.push([{ text: "💎 Открыть продвижение", url: absoluteUrl(promotePath) }])
   return { inline_keyboard: rows }
 }
 
@@ -143,8 +143,8 @@ export async function processPromotionNudges(): Promise<PromotionNudgeResult> {
       title: listing.title,
       views: listing.views,
       days,
-      priceRub: PROMOTION_TARIFFS.CHATS.amountRub,
-      planDays: PROMOTION_TARIFFS.CHATS.durationDays,
+      priceRub: PROMOTION_TARIFFS.CHATS_DAILY.amountRub,
+      planDays: PROMOTION_TARIFFS.CHATS_DAILY.durationDays,
       network,
     })
     const reply_markup = nudgeKeyboard(listing.id)

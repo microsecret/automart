@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { checkPartnerAccess } from "@/lib/partner-access"
+import { CHAT_PROMOTION_TARIFF_IDS } from "@/lib/promotion-tariffs"
 
 export const dynamic = "force-dynamic"
 
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
           userId, deletedAt: null, status: LISTING_STATUS.ACTIVE,
           OR: [
             { promoUntil: { gt: promotionNow } },
-            { promotionOrders: { some: { userId, tariffId: "chats", status: "PAID", promoUntil: { gt: promotionNow } } } },
+            { promotionOrders: { some: { userId, tariffId: { in: CHAT_PROMOTION_TARIFF_IDS }, status: "PAID", promoUntil: { gt: promotionNow } } } },
           ],
         },
       }),

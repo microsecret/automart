@@ -32,6 +32,7 @@ const START_PARAM_ROUTES: Record<string, string> = {
   create: `${CREATE_VEHICLE_ROUTE}?source=telegram`,
   createpart: "/listings/create/part?from=telegram",
   payments: "/dashboard?tab=payments&from=telegram",
+  promote: "/dashboard?tab=listings&from=telegram",
   dashboard: "/dashboard?from=telegram",
   promo: "/auctions?from=telegram",
   /* Вход ради топлива.
@@ -49,6 +50,7 @@ const START_PARAM_ROUTES: Record<string, string> = {
    есть: без проверки чужая строка в параметре увела бы человека на
    произвольный адрес внутри приложения. */
 const LISTING_PARAM = /^listing_([0-9a-f-]{16,40})$/i
+const PROMOTION_PARAM = /^promote_([0-9a-f-]{16,40})$/i
 
 /* Подписка на заправку из чата: fuelsub_<источник>_<идентификатор>.
 
@@ -85,6 +87,9 @@ export function resolveStartRoute(initData: string, search = ""): string | null 
 
     const listing = startParam.match(LISTING_PARAM)
     if (listing) return `/listings/vehicle/${listing[1]}?from=telegram`
+
+    const promotion = startParam.match(PROMOTION_PARAM)
+    if (promotion) return `/listings/${promotion[1]}/promote?from=telegram`
 
     const fuelSub = startParam.match(FUEL_SUB_PARAM)
     if (fuelSub) {

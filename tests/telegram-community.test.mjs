@@ -29,11 +29,12 @@ test("6h minimum survives invalid overrides; post keeps current chat identity an
   assert.ok(post.keyboard.inline_keyboard.flat().some(button => button.text.includes("Пройти авторизацию")))
 })
 
-async function fixture({ ownLink = true, error = false } = {}) {
+async function fixture({ ownLink = true, error = false, paid = false } = {}) {
   const calls = [], rows = [{ id: "-1001", title: "Авторынок Уфа", active: true, marketingEnabled: true, lastPromoAt: null }]
   const key = `community${Math.random()}`
   const prisma = { telegramChat: {
     findMany: async query => rows.filter(row => row.active && row.marketingEnabled && (!row.lastPromoAt || row.lastPromoAt <= query.where.OR[1].lastPromoAt.lte)).map(row => ({ ...row })),
+    count: async () => rows.length,
     updateMany: async query => {
       const row = rows.find(row => row.id === query.where.id && row.lastPromoAt === query.where.lastPromoAt)
       if (!row) return { count: 0 }
@@ -52,11 +53,17 @@ async function fixture({ ownLink = true, error = false } = {}) {
       assert.equal(method, "sendMessage", "no invite export, cleanup or unrelated provider call")
       return { message_id: 10 }
     },
-    telegramPhotoApi: async () => { throw new Error("no image configured in this fake") },
+    telegramPhotoApi: async (payload) => { calls.push({ method: "sendPhoto", payload }); return { message_id: 11 } },
     readLocalPhotos: async () => new Map(), photoMime: () => "image/jpeg",
+    yookassaConfig: () => paid ? {} : null,
+    readFile: async () => Buffer.from("test photo"),
+    buildPromotionOfferPost: () => ({ caption: "Paid promotion", buttons: [] }),
+    CHAT_PROMOTION_OPTIONS: [],
+    PROMOTION_PAYMENT_SUPPORT: "test_admin",
   }
   const source = compile("../src/lib/telegram-marketing.ts").replace(/^import .*from "([^"]+)";$/gm, (line, target) => {
     if (target === "@/lib/telegram-community-post") return line.replace(target, builderUrl)
+    if (target === "node:path") return line
     const names = line.match(/\{([^}]+)\}/)[1]
     return `const {${names}} = globalThis[${JSON.stringify(key)}];`
   })
@@ -71,6 +78,16 @@ test("durable CAS admits one concurrent wave and prevents a repeat within6h", as
     assert.equal(f.calls.filter(call => call.method === "sendMessage").length, 1)
     assert.equal((await f.processTelegramMarketingCampaign()).due, 0)
     assert.equal(f.rows[0].lastPromoMessage, 10)
+  } finally { f.close() }
+})
+
+test("configured checkout gets one illustrated offer in the week's first due slot", async () => {
+  const f = await fixture({ paid: true })
+  try {
+    assert.equal((await f.processTelegramMarketingCampaign()).delivered, 1)
+    assert.equal((await f.processTelegramMarketingCampaign()).due, 0)
+    assert.equal(f.calls.filter(({ method }) => method === "sendPhoto").length, 1)
+    assert.equal(f.rows[0].lastPromoMessage, 11)
   } finally { f.close() }
 })
 
