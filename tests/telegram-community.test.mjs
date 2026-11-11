@@ -66,6 +66,7 @@ async function fixture({ ownLink = true, error = false, paid = false, paidError 
     yookassaConfig: () => paid ? {} : null,
     readFile: async () => Buffer.from("test photo"),
     buildPromotionOfferPost: () => ({ caption: "Paid promotion", buttons: [] }),
+    getChatNetworkStats: async () => ({ chats: 1, members: 500, checkedAt: new Date() }),
     CHAT_PROMOTION_OPTIONS: [],
     PROMOTION_PAYMENT_SUPPORT: "test_admin",
   }

@@ -6,6 +6,7 @@ import { buildCommunityPost, communityChatUrl, communityIntervalMs } from "@/lib
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { buildPromotionOfferPost } from "@/lib/chat-promotion-post"
+import { getChatNetworkStats } from "@/lib/chat-network-stats"
 import { CHAT_PROMOTION_OPTIONS, PROMOTION_PAYMENT_SUPPORT } from "@/lib/promotion-tariffs"
 import { yookassaConfig } from "@/lib/yookassa"
 
@@ -47,9 +48,12 @@ async function processPromotionOffers() {
 
   const image = await readFile(PROMOTION_IMAGE).catch(() => null)
   if (!image) return null
+  const network = await getChatNetworkStats().catch(() => null)
   const post = buildPromotionOfferPost({
     siteUrl: absoluteUrl("/"),
-    chatCount: await prisma.telegramChat.count({ where: eligible }),
+    chatCount: network?.chats ?? await prisma.telegramChat.count({ where: eligible }),
+    audience: network?.members && network.checkedAt
+      ? { members: network.members, checkedAt: network.checkedAt } : undefined,
     botUsername,
     supportUsername: PROMOTION_PAYMENT_SUPPORT,
     plans: CHAT_PROMOTION_OPTIONS,

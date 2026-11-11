@@ -265,14 +265,24 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
 export function buildPromotionOfferPost(options: {
   siteUrl: string
   chatCount: number
+  audience?: { members: number; checkedAt: Date }
   botUsername?: string | null
   supportUsername: string
   plans: ReadonlyArray<{ title: string; amountRub: number; durationDays: number }>
 }): { caption: string; buttons: PostButton[] } {
+  const audience = options.audience
+  const measuredAt = audience ? new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(audience.checkedAt) : null
   const caption = [
     "🚘 <b>Покупатель может быть в другом городе</b>",
     "",
     `📣 LeWheel покажет ваше объявление во всех подключённых чатах авторынка (сейчас их ${options.chatCount}). Покупатели увидят фото, цену и смогут сразу написать вам.`,
+    ...(audience ? [
+      `👥 <b>${audience.members.toLocaleString("ru-RU")} участников суммарно по чатам</b>`,
+      `<i>Проверено ${measuredAt} МСК. Участники нескольких чатов учитываются в каждом.</i>`,
+    ] : []),
     "",
     `📅 <b>Продвижение на ${options.plans[0]?.durationDays ?? 7} дней</b>`,
     ...options.plans.map((plan) => `• ${plan.title} — <b>${plan.amountRub} ₽</b>`),

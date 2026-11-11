@@ -147,6 +147,19 @@ test("рекламный пост называет число чатов, сро
   assert.match(offer.caption, /<i>Одна оплата[^<]+<\/i>/)
   assert.match(offer.caption, /<b>Выберите активное объявление/)
   assert.ok(offer.caption.length <= 1024)
+  assert.doesNotMatch(offer.caption, /Проверено|участников суммарно/)
+})
+
+test("суммарная численность содержит дату и время замера по Москве", () => {
+  const offer = buildPromotionOfferPost({
+    siteUrl: SITE, chatCount: 18, botUsername: "lewheelbot", supportUsername: "payment_admin",
+    plans: [{ title: "1 публикация в сутки", amountRub: 300, durationDays: 7 }],
+    audience: { members: 161_440, checkedAt: new Date("2026-11-11T14:03:30Z") },
+  })
+  assert.match(offer.caption, /161\s440 участников суммарно/)
+  assert.match(offer.caption, /11\.11\.2026,? 17:03 МСК/)
+  assert.match(offer.caption, /Участники нескольких чатов учитываются в каждом/)
+  assert.ok(offer.caption.length <= 1024)
 })
 
 test("обе кнопки рекламного поста открывают Mini App", () => {
