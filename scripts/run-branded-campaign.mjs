@@ -19,12 +19,13 @@ const moduleUrl = (code) => `data:text/javascript;base64,${Buffer.from(code).toS
 
 export function parseCampaignArguments(argv) {
   const apply = argv.includes("--apply")
+  const weeklyDue = argv.includes("--weekly-due")
   const index = argv.indexOf("--wave")
   const wave = index >= 0 ? argv[index + 1] : "preview"
-  const allowed = new Set(["--apply", "--preview", "--wave", wave])
+  const allowed = new Set(["--apply", "--preview", "--weekly-due", "--wave", wave])
   if (argv.some((arg) => !allowed.has(arg)) || (apply && argv.includes("--preview"))) throw new Error("Invalid campaign arguments")
   if (!wave || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(wave) || (apply && index < 0)) throw new Error("Apply requires --wave with a safe stable identifier")
-  return { apply, wave }
+  return { apply, wave, weeklyDue }
 }
 
 export function pauseLifecycleCron(text, wave) {
@@ -160,17 +161,18 @@ async function campaignRuntime(prisma) {
   const telegram = await import(await load("src/lib/telegram.ts"))
   const schedule = await import(await load("src/lib/signup-nudge-schedule.ts"))
   const content = await import(await load("src/lib/telegram-weekly-digest-content.ts"))
+  const { isWeeklyDigestDue } = await import(await load("src/lib/telegram-weekly-digest-message.ts"))
   const lifecycleSource = await readFile(path.join(ROOT, "src/lib/telegram-lifecycle-campaign.ts"), "utf8")
   const lifecycleAst = ts.createSourceFile("lifecycle.ts", lifecycleSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
   const keyboardNode = lifecycleAst.statements.find((item) => ts.isFunctionDeclaration(item) && item.name?.text === "registrationKeyboard")
   if (!keyboardNode) throw new Error("Registration keyboard implementation is missing")
   const keyboardSource = `import {getTelegramBotUsername,getTelegramMiniAppUrl} from ${JSON.stringify(await load("src/lib/telegram.ts"))};\nimport {WEEKLY_DIGEST_OFF_CALLBACK} from ${JSON.stringify(await load("src/lib/telegram-weekly-digest-message.ts"))};\n${keyboardNode.getFullText(lifecycleAst)}\nexport {registrationKeyboard};`
   const keyboard = await import(moduleUrl(ts.transpileModule(keyboardSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText))
-  return { ...telegram, ...schedule, ...content, ...keyboard, dispose: () => { delete globalThis[contextKey] } }
+  return { ...telegram, ...schedule, ...content, ...keyboard, isWeeklyDigestDue, dispose: () => { delete globalThis[contextKey] } }
 }
 
 export async function runBrandedCampaign(argv = process.argv.slice(2)) {
-  const { apply, wave } = parseCampaignArguments(argv)
+  const { apply, wave, weeklyDue } = parseCampaignArguments(argv)
   if (path.resolve(process.cwd()) !== ROOT) throw new Error("Run from the application root")
   if (apply && process.env.CAMPAIGN_LOCK_HELD !== "1") throw new Error("External campaign flock is required")
   if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_MINI_APP_URL) throw new Error("Telegram deployment settings are missing")
@@ -199,13 +201,19 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
     }
     const pictures = {}
     for (const kind of PHASES) pictures[kind] = await readFile(path.join(ROOT, "public/images/telegram/campaign-v1", `${kind}.jpg`))
-    const contacts = await prisma.telegramContact.findMany({ where: { blocked: false, weeklyOptOut: false }, select: { telegramId: true }, orderBy: { startedAt: "asc" } })
+    const contactFields = { telegramId: true, firstName: true, startedAt: true, blocked: true, weeklyOptOut: true, lastBroadcastAt: true, lastWeeklyAt: true }
+    const now = new Date()
+    const isDue = (contact, user) => runtime.isWeeklyDigestDue({
+      ...contact, lastBroadcastAt: user?.regReminderAt > contact.lastBroadcastAt ? user.regReminderAt : contact.lastBroadcastAt,
+    }, now)
+    const contacts = await prisma.telegramContact.findMany({ where: { blocked: false, weeklyOptOut: false }, select: contactFields, orderBy: { startedAt: "asc" } })
     const users = await prisma.user.findMany({ where: { telegramId: { in: contacts.map((contact) => contact.telegramId) } }, select: {
-      telegramId: true, accountStatus: true, email: true, emailVerified: true, phone: true, telegramVerifiedAt: true, hashedPassword: true,
+      telegramId: true, accountStatus: true, email: true, emailVerified: true, phone: true, telegramVerifiedAt: true, hashedPassword: true, regReminderAt: true,
     } })
     const byId = new Map(users.map((user) => [user.telegramId, user]))
+    const eligible = weeklyDue ? contacts.filter((contact) => isDue(contact, byId.get(contact.telegramId))) : contacts
     const audience = { total: 0, registration: 0, seller: 0, restricted: 0 }
-    for (const contact of contacts) {
+    for (const contact of eligible) {
       const user = byId.get(contact.telegramId)
       if (user && user.accountStatus !== "ACTIVE") { audience.restricted++; continue }
       audience.total++
@@ -216,7 +224,7 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
     if (!activeCron.split("\n").some((line) => !line.trimStart().startsWith("#") && line.endsWith("# automart-weekly-digest"))) {
       throw new Error("Weekly lifecycle scheduler is missing; wave not started")
     }
-    console.log(JSON.stringify({ mode: apply ? "apply" : "preview", audience, maximumPerSecond: 5, phases: PHASES, schedulerJobs: expectedJobs }))
+    console.log(JSON.stringify({ mode: apply ? "apply" : "preview", weeklyDue, audience, maximumPerSecond: 5, phases: PHASES, schedulerJobs: expectedJobs }))
     if (!apply) return { mode: "preview", audience }
     await mkdir(directory, { recursive: true, mode: 0o700 })
     let checkpoint
@@ -224,9 +232,10 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
       checkpoint = JSON.parse(await readFile(checkpointFile, "utf8"))
       if (checkpoint.version !== 1 || checkpoint.wave !== wave || !Array.isArray(checkpoint.contacts) || !checkpoint.deliveries) throw new Error("Invalid checkpoint")
       if (checkpoint.botId && String(checkpoint.botId) !== String(bot.id)) throw new Error("Checkpoint belongs to another Telegram bot")
+      if (Boolean(checkpoint.weeklyDue) !== weeklyDue) throw new Error("Campaign eligibility differs from the checkpoint")
     } catch (error) {
       if (error.code !== "ENOENT") throw new Error("Cannot safely load wave checkpoint")
-      checkpoint = { version: 1, wave, botId: String(bot.id), createdAt: new Date().toISOString(), contacts: contacts.map((contact) => contact.telegramId), deliveries: {}, photos: {}, status: "RUNNING" }
+      checkpoint = { version: 1, wave, weeklyDue, botId: String(bot.id), createdAt: now.toISOString(), contacts: eligible.map((contact) => contact.telegramId), deliveries: {}, photos: {}, status: "RUNNING" }
     }
     checkpoint.photos ||= {}
     await writePrivateJson(checkpointFile, checkpoint)
@@ -267,11 +276,11 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
       for (const telegramId of checkpoint.contacts) {
         if (stopping) break
         if (shouldSkipCheckpoint(checkpoint.deliveries[telegramId])) continue
-        const contact = await prisma.telegramContact.findUnique({ where: { telegramId }, select: { telegramId: true, firstName: true, startedAt: true, blocked: true, weeklyOptOut: true } })
+        const contact = await prisma.telegramContact.findUnique({ where: { telegramId }, select: contactFields })
         const user = await prisma.user.findUnique({ where: { telegramId }, select: {
-          accountStatus: true, email: true, emailVerified: true, phone: true, telegramVerifiedAt: true, hashedPassword: true,
+          accountStatus: true, email: true, emailVerified: true, phone: true, telegramVerifiedAt: true, hashedPassword: true, regReminderAt: true,
         } })
-        if (!contact || contact.blocked || contact.weeklyOptOut || (user && user.accountStatus !== "ACTIVE")) {
+        if (!contact || contact.blocked || contact.weeklyOptOut || (user && user.accountStatus !== "ACTIVE") || (weeklyDue && !isDue(contact, user))) {
           await mark(telegramId, { status: "SKIPPED", at: new Date().toISOString() }); counts.skipped++; continue
         }
         const kind = runtime.isTelegramUserRegistered(user) ? "seller" : "registration"
@@ -281,6 +290,7 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
           reply_markup: runtime.registrationKeyboard(),
         }
         let retries = 0
+        let lastBroadcastAt = contact.lastBroadcastAt
         while (!stopping) {
           // A retry-after wait can outlive registration or moderation changes.
           const liveUser = await prisma.user.findUnique({ where: { telegramId }, select: {
@@ -295,8 +305,11 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
           if (stopping) break
           const attemptedAt = new Date()
           await mark(telegramId, { status: "ATTEMPTED", kind, attemptedAt: attemptedAt.toISOString() })
-          const allowed = await prisma.telegramContact.updateMany({ where: { telegramId, blocked: false, weeklyOptOut: false }, data: { lastBroadcastAt: attemptedAt } })
+          const allowed = await prisma.telegramContact.updateMany({ where: { telegramId, blocked: false, weeklyOptOut: false,
+            ...(weeklyDue ? { lastBroadcastAt, lastWeeklyAt: contact.lastWeeklyAt } : {}),
+          }, data: { lastBroadcastAt: attemptedAt } })
           if (allowed.count !== 1) { await mark(telegramId, { status: "SKIPPED", at: new Date().toISOString() }); counts.skipped++; break }
+          lastBroadcastAt = attemptedAt
           lastStart = Date.now()
           const fileId = checkpoint.photos[kind]
           try {
@@ -313,6 +326,11 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
           } catch (error) {
             const reason = error instanceof Error ? error.message : String(error)
             const retryAfter = /retry after (\d+)/i.exec(reason)
+            const invalidPhoto = fileId && /wrong file identifier|invalid file[_ ]?id|file[_ ]?id.*invalid/i.test(reason)
+            if (weeklyDue && (retryAfter || invalidPhoto)) {
+              await prisma.telegramContact.updateMany({ where: { telegramId, lastBroadcastAt: attemptedAt, lastWeeklyAt: contact.lastWeeklyAt }, data: { lastBroadcastAt: contact.lastBroadcastAt } })
+              lastBroadcastAt = contact.lastBroadcastAt
+            }
             if (retryAfter) {
               counts.rateLimited++
               await mark(telegramId, { status: "RETRYABLE", kind, at: new Date().toISOString(), retryAfterSeconds: Number(retryAfter[1]) })
@@ -323,7 +341,7 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
               while (!stopping && Date.now() < until) await sleep(Math.min(1000, until - Date.now()))
               continue
             }
-            if (fileId && /wrong file identifier|invalid file[_ ]?id|file[_ ]?id.*invalid/i.test(reason) && retries++ === 0) {
+            if (invalidPhoto && retries++ === 0) {
               delete checkpoint.photos[kind]
               await mark(telegramId, { status: "RETRYABLE", kind, at: new Date().toISOString() })
               continue

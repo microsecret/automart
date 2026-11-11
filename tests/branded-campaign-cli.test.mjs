@@ -4,8 +4,9 @@ import test from "node:test"
 import { parseCampaignArguments, pauseLifecycleCron, restoreLifecycleCron, shouldSkipCheckpoint } from "../scripts/run-branded-campaign.mjs"
 
 test("campaign preview is default; live mode needs a safe explicit wave", () => {
-  assert.deepEqual(parseCampaignArguments([]), { apply: false, wave: "preview" })
-  assert.deepEqual(parseCampaignArguments(["--apply", "--wave", "20261103-invite"]), { apply: true, wave: "20261103-invite" })
+  assert.deepEqual(parseCampaignArguments([]), { apply: false, wave: "preview", weeklyDue: false })
+  assert.deepEqual(parseCampaignArguments(["--apply", "--wave", "20261103-invite"]), { apply: true, wave: "20261103-invite", weeklyDue: false })
+  assert.deepEqual(parseCampaignArguments(["--apply", "--weekly-due", "--wave", "weekly-invite"]), { apply: true, wave: "weekly-invite", weeklyDue: true })
   for (const args of [["--apply"], ["--apply", "--wave", "../escape"], ["--wave", "--apply"], ["--apply", "--preview", "--wave", "test"], ["--unknown"]]) {
     assert.throws(() => parseCampaignArguments(args))
   }
