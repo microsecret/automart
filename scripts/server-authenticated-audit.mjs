@@ -570,7 +570,7 @@ async function run() {
   })
   await expect(`/api/listings/${publicListingId}/promote`, cookie, 403, {
     method: "POST",
-    body: JSON.stringify({ tariff: "boost" }),
+    body: JSON.stringify({ tariff: "chats_daily" }),
   })
   await expect(`/api/listings/${buyerListingId}/promote`, cookie, 400, {
     method: "POST",

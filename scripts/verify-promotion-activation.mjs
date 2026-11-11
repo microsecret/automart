@@ -47,7 +47,7 @@ let sequence = 0
 try {
   const { activatePaidPromotion } = await import(await load("src/lib/promotion-activation.ts"))
   const { PROMOTION_TARIFFS } = await import(await load("src/lib/promotion-tariffs.ts"))
-  const { BOOST, PREMIUM, CHATS } = PROMOTION_TARIFFS
+  const { BOOST, PREMIUM, CHATS, CHATS_DAILY, CHATS_THRICE } = PROMOTION_TARIFFS
   check("legacy chats tariff keeps original paid order price and duration", CHATS.id === "chats" && CHATS.amountRub === 300 && CHATS.durationDays === 30)
 
   async function fixture(promotion = {}, status = "ACTIVE") {
@@ -115,6 +115,16 @@ try {
   const chatOnlyListing = await db.listing.findUniqueOrThrow({ where: { id: chatOnly.listing.id } })
   check("chat-only order leaves website placement fields unchanged", chatOnlyListing.promoType === null && chatOnlyListing.promoUntil === null && chatOnlyListing.isFeatured === false)
   check("first chat order retains provider creation-time anchor", +(await db.promotionOrder.findUniqueOrThrow({ where: { id: firstChatOrder.id } })).promoUntil === +paymentCreatedAt + CHATS.durationDays * DAY)
+
+  const weekly = await fixture()
+  const daily = await orderFor(weekly, CHATS_DAILY)
+  const beforeActivation = Date.now()
+  check("new daily term activates from confirmed payment processing", await activatePaidPromotion(payment(weekly, CHATS_DAILY, daily)) === "activated")
+  const dailyEnd = +(await db.promotionOrder.findUniqueOrThrow({ where: { id: daily.id } })).promoUntil
+  check("first weekly term starts at activation instead of checkout creation", dailyEnd >= beforeActivation + 7 * DAY && dailyEnd <= Date.now() + 7 * DAY)
+  const thrice = await orderFor(weekly, CHATS_THRICE)
+  check("changing frequency buys a consecutive weekly term", await activatePaidPromotion(payment(weekly, CHATS_THRICE, thrice)) === "activated")
+  check("new frequency starts after the already paid term", +(await db.promotionOrder.findUniqueOrThrow({ where: { id: thrice.id } })).promoUntil === dailyEnd + 7 * DAY)
 
   const inactive = await fixture({}, "PAUSED")
   const inactiveOrder = await orderFor(inactive, CHATS)

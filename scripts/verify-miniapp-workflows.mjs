@@ -170,6 +170,7 @@ try {
     { start: "create", path: "/listings/create/vehicle", query: "source=telegram" },
     { start: "createpart", path: "/listings/create/part", query: "from=telegram" },
     { start: "payments", path: "/dashboard", query: "tab=payments" },
+    { start: "promote", path: "/dashboard", query: "tab=listings" },
     { start: "dashboard", path: "/dashboard", query: "from=telegram" },
     { start: "create", signedStart: "payments", path: "/dashboard", query: "tab=payments" },
   ]
