@@ -159,6 +159,7 @@ test("суммарная численность содержит дату и в�
   assert.match(offer.caption, /161\s440 участников суммарно/)
   assert.match(offer.caption, /11\.11\.2026,? 17:03 МСК/)
   assert.match(offer.caption, /Участники нескольких чатов учитываются в каждом/)
+  assert.match(offer.caption, /^<blockquote>🚘[\s\S]+<\/blockquote>$/)
   assert.ok(offer.caption.length <= 1024)
 })
 

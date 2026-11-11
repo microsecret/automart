@@ -295,7 +295,7 @@ export function buildPromotionOfferPost(options: {
 
   const site = options.siteUrl.replace(/\/$/, "")
   return {
-    caption,
+    caption: `<blockquote>${caption}</blockquote>`,
     buttons: [
       { text: "🚀 Выбрать тариф в Mini App", url: options.botUsername
         ? `https://t.me/${options.botUsername}?startapp=promote`
