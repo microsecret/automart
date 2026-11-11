@@ -211,8 +211,11 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
       audience.total++
       audience[runtime.isTelegramUserRegistered(user || null) ? "seller" : "registration"]++
     }
-    const expectedJobs = pauseLifecycleCron(restoreLifecycleCron(readCron(), wave).cron, wave).changed
-    if (expectedJobs !== CRON_TAGS.length) throw new Error("Expected lifecycle scheduler tags are missing; wave not started")
+    const activeCron = restoreLifecycleCron(readCron(), wave).cron
+    const expectedJobs = pauseLifecycleCron(activeCron, wave).changed
+    if (!activeCron.split("\n").some((line) => !line.trimStart().startsWith("#") && line.endsWith("# automart-weekly-digest"))) {
+      throw new Error("Weekly lifecycle scheduler is missing; wave not started")
+    }
     console.log(JSON.stringify({ mode: apply ? "apply" : "preview", audience, maximumPerSecond: 5, phases: PHASES, schedulerJobs: expectedJobs }))
     if (!apply) return { mode: "preview", audience }
     await mkdir(directory, { recursive: true, mode: 0o700 })
@@ -246,7 +249,7 @@ export async function runBrandedCampaign(argv = process.argv.slice(2)) {
     const resumedCron = restoreLifecycleCron(currentCron, wave).cron
     await writeFile(path.join(directory, `campaign-${wave}.cron-before`), currentCron, { mode: 0o600, flag: "wx" }).catch((error) => { if (error.code !== "EEXIST") throw error })
     const pause = pauseLifecycleCron(resumedCron, wave)
-    if (pause.changed !== CRON_TAGS.length) throw new Error("Lifecycle scheduler changed during preflight; wave not started")
+    if (pause.changed !== expectedJobs || resumedCron !== activeCron) throw new Error("Cron changed during preflight; wave not started")
     installCron(pause.cron)
     paused = true
     console.log(JSON.stringify({ schedulerJobsPaused: pause.changed }))

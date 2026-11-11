@@ -32,22 +32,25 @@ export function buildWeeklyDigestMessage(input: {
   createPart: Target
   dashboard: Target
   promotions: Target
+  promotionPriceRub: number
+  promotionDays: number
 }): WeeklyDigestMessage {
   const text = [
-    "🚘 <b>Продаёте автомобиль или запчасти? Покажите их на LeWheel</b>", "",
-    "Добавьте фотографии, цену, характеристики и контакты. После модерации покупатели смогут увидеть предложение и написать вам.", "",
-    "✅ Базовое размещение на сайте бесплатно.",
-    "📱 Создание и управление объявлениями — в мини-приложении Telegram.",
-    "💬 Для автомобилей доступна публикация в чатах авторынка; повторные размещения подключаются отдельно в продвижении.", "",
+    "🚘 <b>Ваш автомобиль или запчасти уже могут искать</b>", "",
+    "Продаёте машину? Остались шины, диски, фары, детали двигателя или кузова? Покажите их покупателям на LeWheel.", "",
+    "✅ <b><u>Размещение объявлений совершенно бесплатно</u></b>",
+    "📱 Откройте Mini App, добавьте фото, цену и характеристики. После модерации покупатели увидят объявление и смогут написать вам.", "",
+    `🚀 <b>Хотите показать объявление в городских чатах?</b> Подключите на сайте продвижение от <b>${input.promotionPriceRub} ₽ за ${input.promotionDays} дней</b>.`, "",
     input.hasAccount ? "🤝 Пригласите друзей по личной ссылке — получайте вознаграждение по условиям партнёрской программы." : "Завершите регистрацию, чтобы размещать свои предложения.", "",
     "<i>Одно приглашение в неделю. Отключить — кнопкой ниже.</i>",
   ].join("\n")
   const open = (text: string, target: Target): InlineButton => target.webApp
     ? { text, web_app: { url: target.url } } : { text, url: target.url }
   return { text, reply_markup: { inline_keyboard: [
-    [open("📱 Подать авто", input.createListing), { text: "🌐 Подать на сайте", url: input.createWebsite }],
-    [open("🔧 Разместить запчасть", input.createPart)],
-    [open("🚀 Тарифы и продвижение", input.promotions)],
+    [open("🚘 Разместить авто бесплатно", input.createListing)],
+    [open("🔧 Разместить запчасть бесплатно", input.createPart)],
+    [open("🚀 Продвижение на сайте", input.promotions)],
+    [{ text: "🌐 Подать на сайте", url: input.createWebsite }],
     [open("📋 Мои объявления", input.dashboard)],
     [{ text: "🤝 Пригласить друга", url: `https://t.me/share/url?url=${encodeURIComponent(input.inviteUrl)}&text=${encodeURIComponent("LeWheel — автомобили и запчасти в Telegram")}` }],
     [{ text: "🔕 Не присылать", callback_data: WEEKLY_DIGEST_OFF_CALLBACK }],

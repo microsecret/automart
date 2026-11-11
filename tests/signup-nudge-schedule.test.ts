@@ -1,6 +1,5 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { NUDGE_VARIANTS, nudgeIndex, nudgeText } from "../src/lib/signup-nudge-schedule.ts"
 
@@ -92,27 +91,8 @@ test("несуществующий номер не роняет рассылку
 })
 
 
-test("рассылка не быстрее пяти сообщений в секунду", () => {
-  /* Telegram отбивает частую отправку ошибкой лимита, и наказание тем
-     дольше, чем упорнее бот долбится: следующие попытки уходят в отказ
-     целыми пачками.
-
-     Пауза выдерживается и после неудачной отправки: раньше на блокировке
-     стоял continue, и цепочка блокировок пролетала без задержки — именно
-     тот случай, когда лимит и срабатывает. */
-  const nudge = readFileSync(new URL("../src/lib/telegram-lifecycle-campaign.ts", import.meta.url), "utf8")
-
-  assert.match(nudge, /const SEND_INTERVAL_MS = 200/)
-  assert.match(nudge, /Date\.now\(\) - started/)
-  /* Раньше на блокировке стоял continue, и цепочка блокировок пролетала
-     без задержки — именно тот случай, когда лимит и срабатывает. */
-  assert.match(nudge, /finally/)
-})
-
-test("напоминание зовёт зарегистрироваться и называет чат города", () => {
-  /* Владелец попросил прямо: «вы до сих пор не зарегистрировались»,
-     размещение бесплатно на сайте и в чате авторынка города. */
+test("напоминание предлагает завершить авторизацию и называет чат города", () => {
   const text = nudgeText(0, "Тамерлан")
-  assert.match(text, /Тамерлан, вы всё ещё не зарегистрировались/)
+  assert.match(text, /Тамерлан, вы ещё не завершили авторизацию/)
   assert.match(text, /чате авторынка вашего города/)
 })

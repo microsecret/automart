@@ -10,13 +10,18 @@ import { isTelegramCampaignWaveActive } from "@/lib/telegram-campaign-lock"
 const BATCH_SIZE = 25
 const SEND_INTERVAL_MS = 200
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const lifecycle = globalThis as typeof globalThis & {
+  lewheelLifecycleRunning?: boolean
+  lewheelLifecycleLastSend?: number
+  lewheelLifecycleRetryAt?: number
+}
 
 function registrationKeyboard() {
   const username = getTelegramBotUsername()
   if (!username) throw new Error("Telegram bot username is required for registration campaigns")
   const mini = getTelegramMiniAppUrl()
   return { inline_keyboard: [
-    [{ text: "✅ Продолжить регистрацию", url: `https://t.me/${username}?start=register` }],
+    [{ text: "✅ Продолжить авторизацию", url: `https://t.me/${username}?start=register` }],
     ...(mini ? [[{ text: "📱 Открыть мини-приложение", web_app: { url: mini } }]] : []),
     [{ text: "🔕 Не присылать", callback_data: WEEKLY_DIGEST_OFF_CALLBACK }],
   ] }
@@ -27,6 +32,20 @@ function registrationKeyboard() {
  * An uncertain send consumes this week's attempt, avoiding duplicate spam.
  */
 export async function processTelegramLifecycle(options: { now?: Date; dryRun?: boolean } = {}) {
+  if (options.dryRun) return runTelegramLifecycle(options)
+  if (lifecycle.lewheelLifecycleRunning) return {
+    checked: 0, due: 0, sent: 0, registration: 0, seller: 0, blocked: 0, failed: 0,
+    skipped: 0, retryAfterSeconds: 0, dryRun: false, busy: true,
+  }
+  lifecycle.lewheelLifecycleRunning = true
+  try {
+    return await runTelegramLifecycle(options)
+  } finally {
+    lifecycle.lewheelLifecycleRunning = false
+  }
+}
+
+async function runTelegramLifecycle(options: { now?: Date; dryRun?: boolean }) {
   if (!options.dryRun && await isTelegramCampaignWaveActive()) return {
     checked: 0, due: 0, sent: 0, registration: 0, seller: 0, blocked: 0, failed: 0,
     skipped: 0, retryAfterSeconds: 0, dryRun: false, pausedForWave: true,
@@ -47,6 +66,8 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
     select: { telegramId: true, firstName: true, startedAt: true, lastBroadcastAt: true, lastWeeklyAt: true },
   })
   const result = { checked: candidates.length, due: 0, sent: 0, registration: 0, seller: 0, blocked: 0, failed: 0, skipped: 0, retryAfterSeconds: 0, dryRun: options.dryRun === true }
+  const cooldown = (lifecycle.lewheelLifecycleRetryAt ?? 0) - Date.now()
+  if (!result.dryRun && cooldown > 0) return { ...result, retryAfterSeconds: Math.ceil(cooldown / 1000) }
   for (const contact of candidates) {
     if (!result.dryRun && await isTelegramCampaignWaveActive()) break
     if (nudgeIndex(contact.startedAt, now) < 0) { result.skipped++; continue }
@@ -64,7 +85,6 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
       data: { lastBroadcastAt: legacyRecent ? user.regReminderAt : now },
     })
     if (claim.count !== 1 || restricted || legacyRecent) { result.skipped++; continue }
-    const started = Date.now()
     try {
       // Re-read after the claim: registration may have finished during the scan.
       const current = await prisma.user.findUnique({ where: { telegramId: contact.telegramId }, select: {
@@ -72,6 +92,10 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
       } })
       if (current && current.accountStatus !== "ACTIVE") { result.skipped++; continue }
       const registered = getTelegramRegistrationStep(current) === "complete"
+      const message = registered ? await buildWeeklyDigestFor(contact.telegramId)
+        : { text: nudgeText(nudgeIndex(contact.startedAt, now), contact.firstName), reply_markup: registrationKeyboard() }
+      const remaining = SEND_INTERVAL_MS - (performance.now() - (lifecycle.lewheelLifecycleLastSend ?? -SEND_INTERVAL_MS))
+      if (remaining > 0) await sleep(Math.ceil(remaining))
       const stillAllowed = await prisma.telegramContact.updateMany({ where: {
         telegramId: contact.telegramId, lastBroadcastAt: now, blocked: false, weeklyOptOut: false,
       }, data: { registered } })
@@ -84,14 +108,10 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
         result.skipped++
         break
       }
-      if (registered) {
-        const message = await buildWeeklyDigestFor(contact.telegramId)
-        await sendTelegramCampaignPhoto(contact.telegramId, "seller", message.text, message.reply_markup)
-        result.seller++
-      } else {
-        await sendTelegramCampaignPhoto(contact.telegramId, "registration", nudgeText(nudgeIndex(contact.startedAt, now), contact.firstName), registrationKeyboard())
-        result.registration++
-      }
+      lifecycle.lewheelLifecycleLastSend = performance.now()
+      const kind = registered ? "seller" : "registration"
+      await sendTelegramCampaignPhoto(contact.telegramId, kind, message.text, message.reply_markup)
+      result[kind]++
       await prisma.telegramContact.updateMany({ where: { telegramId: contact.telegramId, lastBroadcastAt: now }, data: { lastWeeklyAt: now } })
       result.sent++
     } catch (error) {
@@ -104,6 +124,7 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
           telegramId: contact.telegramId, lastBroadcastAt: now, lastWeeklyAt: contact.lastWeeklyAt,
         }, data: { lastBroadcastAt: contact.lastBroadcastAt } })
         result.retryAfterSeconds = Number(retryAfter[1])
+        lifecycle.lewheelLifecycleRetryAt = Date.now() + result.retryAfterSeconds * 1000
         result.failed++
         break
       }
@@ -111,9 +132,6 @@ export async function processTelegramLifecycle(options: { now?: Date; dryRun?: b
         await markTelegramContactBlocked(contact.telegramId)
         result.blocked++
       } else { result.failed++; console.error("[telegram-lifecycle] Delivery failed:", message) }
-    } finally {
-      const elapsed = Date.now() - started
-      if (elapsed < SEND_INTERVAL_MS) await sleep(SEND_INTERVAL_MS - elapsed)
     }
   }
   return result

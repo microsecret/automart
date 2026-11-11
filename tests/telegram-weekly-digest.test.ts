@@ -33,17 +33,22 @@ test("кнопки: автомобиль, запчасть, кабинет, ли
   const message = buildWeeklyDigestMessage({
     inviteUrl: "https://lewheel.ru/services/fuel-map?ref=ABCD1234",
     hasAccount: true,
-    createPart: { url: "https://lewheel.ru/listings/create/part", webApp: true },
-    dashboard: { url: "https://lewheel.ru/dashboard", webApp: true },
-    createListing: { url: "https://lewheel.ru/listings/create/vehicle", webApp: false },
+    createPart: { url: "https://lewheel.ru/telegram?start=createpart", webApp: true },
+    dashboard: { url: "https://lewheel.ru/telegram?start=dashboard", webApp: true },
+    createListing: { url: "https://lewheel.ru/telegram?start=create", webApp: true },
     createWebsite: "https://lewheel.ru/listings/create/vehicle",
-    promotions: { url: "https://lewheel.ru/telegram?start=payments&from=telegram", webApp: true },
+    promotions: { url: "https://lewheel.ru/dashboard?tab=payments", webApp: false },
+    promotionPriceRub: 300,
+    promotionDays: 7,
   })
   const buttons = message.reply_markup.inline_keyboard.flat()
   assert.equal(buttons.length, 7)
-  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/listings/create/part")))
-  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("/dashboard")))
-  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.includes("start=payments")))
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("?start=create")))
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("?start=createpart")))
+  assert.ok(buttons.some((button) => "web_app" in button && button.web_app.url.endsWith("?start=dashboard")))
+  assert.ok(buttons.some((button) => "url" in button && button.url.endsWith("/dashboard?tab=payments")))
+  assert.match(message.text, /<b><u>Размещение объявлений совершенно бесплатно<\/u><\/b>/)
+  assert.match(message.text, /300 ₽ за 7 дней/)
   assert.ok(buttons.some((button) => "url" in button && button.text.includes("Подать на сайте") && button.url === "https://lewheel.ru/listings/create/vehicle"))
   const share = buttons.find((button) => button.text.includes("Пригласить друга")) as { url: string }
   assert.ok(share.url.startsWith("https://t.me/share/url?url="))

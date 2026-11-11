@@ -24,6 +24,7 @@ const complete = { accountStatus: "ACTIVE", phone: "+70000000000", telegramVerif
 async function fixture({ contact: extra = {}, user = null, failure = null, onClaim, waveActive = () => false } = {}) {
   const state = { telegramId: "101", firstName: "<Test>", startedAt: ago(365), lastBroadcastAt: null, lastWeeklyAt: null, blocked: false, weeklyOptOut: false, registered: false, ...extra }
   const sends = []
+  const sendTimes = []
   let writes = 0
   const matches = (row, where) => Object.entries(where).every(([key, value]) => {
     if (key === "AND") return value.every((condition) => matches(row, condition))
@@ -51,12 +52,12 @@ async function fixture({ contact: extra = {}, user = null, failure = null, onCla
     isTelegramCampaignWaveActive: waveActive,
     markTelegramContactBlocked: async () => { state.blocked = true },
     buildWeeklyDigestFor: async () => ({ text: "Seller invitation", reply_markup: { inline_keyboard: [] } }),
-    sendTelegramCampaignPhoto: async (...args) => { sends.push(args); if (failure) throw new Error(failure) },
+    sendTelegramCampaignPhoto: async (...args) => { sendTimes.push(performance.now()); sends.push(args); if (failure) throw new Error(failure) },
   }
   const shim = encode(`export const {prisma,getTelegramBotUsername,getTelegramMiniAppUrl,getTelegramRegistrationStep,markTelegramContactBlocked,buildWeeklyDigestFor,sendTelegramCampaignPhoto,isTelegramCampaignWaveActive}=globalThis[${JSON.stringify(key)}]`)
   const worker = compile("../src/lib/telegram-lifecycle-campaign.ts").replace(/from "(@\/lib\/[^"]+)"/g, (_match, name) => `from ${JSON.stringify(name.endsWith("signup-nudge-schedule") ? scheduleUrl : name.endsWith("telegram-weekly-digest-message") ? weeklyUrl : shim)}`)
   const { processTelegramLifecycle: run } = await import(encode(worker))
-  return { state, sends, run: (options = {}) => run({ now, ...options }), writes: () => writes, dispose: () => { delete globalThis[key] } }
+  return { state, sends, sendTimes, run: (options = {}) => run({ now, ...options }), writes: () => writes, dispose: () => { delete globalThis[key] } }
 }
 
 test("weekly lifecycle policy and durable claims", async (t) => {
@@ -77,7 +78,7 @@ test("weekly lifecycle policy and durable claims", async (t) => {
       assert.equal(+f.state.lastWeeklyAt, +now, "registration sends count in weekly delivery stats")
       assert.ok(f.sends[0][2].length < 1024)
       const buttons = f.sends[0][3].inline_keyboard.flat()
-      assert.ok(buttons.some((b) => b.url === "https://t.me/lewheelbot?start=register"))
+      assert.ok(buttons.some((b) => b.url === "https://t.me/lewheelbot?start=register" && b.text.includes("Продолжить авторизацию")))
       assert.ok(buttons.some((b) => b.web_app))
       assert.ok(buttons.some((b) => b.callback_data === "digest_off"))
       assert.equal((await f.run()).sent, 0)
@@ -88,8 +89,18 @@ test("weekly lifecycle policy and durable claims", async (t) => {
     try {
       const results = await Promise.all([f.run(), f.run()])
       assert.equal(results.reduce((n, r) => n + r.sent, 0), 1)
+      assert.ok(results.some((r) => r.busy))
       assert.equal(f.sends.length, 1)
     } finally { f.dispose() }
+  })
+  await t.test("seller and authorization batches share a 200ms minimum send interval", async () => {
+    const seller = await fixture({ user: complete })
+    const registration = await fixture()
+    try {
+      assert.equal((await seller.run()).seller, 1)
+      assert.equal((await registration.run()).registration, 1)
+      assert.ok(registration.sendTimes[0] - seller.sendTimes[0] >= 199)
+    } finally { seller.dispose(); registration.dispose() }
   })
   for (const contact of [{ blocked: true }, { weeklyOptOut: true }, { startedAt: ago(6) }, { lastBroadcastAt: ago(6) }, { lastWeeklyAt: ago(6) }]) {
     await t.test(`does not send to ${JSON.stringify(contact)}`, async () => {
@@ -129,7 +140,9 @@ test("weekly lifecycle policy and durable claims", async (t) => {
       assert.equal(result.retryAfterSeconds, 60)
       assert.equal(f.state.lastBroadcastAt, null)
       assert.equal(f.state.lastWeeklyAt, null)
-    } finally { f.dispose() }
+      assert.ok((await f.run()).retryAfterSeconds > 0)
+      assert.equal(f.sends.length, 1)
+    } finally { delete globalThis.lewheelLifecycleRetryAt; f.dispose() }
   })
   await t.test("uncertain network failure keeps weekly claim to prevent duplicate photos", async () => {
     const f = await fixture({ failure: "socket hang up" })

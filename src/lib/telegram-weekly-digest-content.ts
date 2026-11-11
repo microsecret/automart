@@ -5,6 +5,7 @@ import { referralCodeForTelegram } from "@/lib/referral"
 import { getSiteUrl } from "@/lib/site-url"
 import { CREATE_VEHICLE_HREF } from "@/lib/navigation-registry"
 import { buildWeeklyDigestMessage } from "@/lib/telegram-weekly-digest-message"
+import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 
 export async function buildWeeklyDigestFor(telegramId: string) {
   const user = await prisma.user.findUnique({
@@ -27,6 +28,8 @@ export async function buildWeeklyDigestFor(telegramId: string) {
     createListing: target("/telegram?start=create"),
     createWebsite: `${site}${CREATE_VEHICLE_HREF}`,
     createPart: target("/telegram?start=createpart"), dashboard: target("/telegram?start=dashboard"),
-    promotions: target("/telegram?start=payments"),
+    promotions: { url: `${site}/dashboard?tab=payments`, webApp: false },
+    promotionPriceRub: PROMOTION_TARIFFS.CHATS_DAILY.amountRub,
+    promotionDays: PROMOTION_TARIFFS.CHATS_DAILY.durationDays,
   })
 }
