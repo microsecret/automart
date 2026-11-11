@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getPromotionTariff } from "@/lib/promotion-tariffs"
-import { activatePaidPromotion, markPromotionOrderFailed } from "@/lib/promotion-activation"
-import { fetchYookassaPayment, paymentIdFromWebhook, paymentMatchesAmount, yookassaConfig } from "@/lib/yookassa"
+import { prisma } from "@/lib/prisma"
+import { applyYookassaPromotionPayment } from "@/lib/promotion-reconcile"
+import { fetchYookassaPayment, paymentIdFromWebhook, yookassaConfig } from "@/lib/yookassa"
 
 export const dynamic = "force-dynamic"
 
@@ -26,40 +26,23 @@ export async function POST(request: NextRequest) {
   try {
     const payment = await fetchYookassaPayment(config, paymentId)
 
-    const orderId = payment.metadata?.orderId
-    const listingId = payment.metadata?.listingId
-    const userId = payment.metadata?.userId
-    const tariff = getPromotionTariff(payment.metadata?.promotionType)
-
-    if (!orderId || !listingId || !userId || !tariff) {
-      console.error(`Платёж ЮKassa ${payment.id} без метаданных продвижения`)
-      return NextResponse.json({ received: true })
-    }
-
-    if (payment.status === "canceled") {
-      await markPromotionOrderFailed(orderId, "FAILED")
-      return NextResponse.json({ received: true })
-    }
-
-    if (payment.status !== "succeeded" || !payment.paid) {
-      return NextResponse.json({ received: true })
-    }
-
-    /* Сумма сверяется до копейки: платёж на 1 ₽ с чужими метаданными не
-       должен активировать тариф за 3990. */
-    if (!paymentMatchesAmount(payment, tariff.amountRub)) {
-      console.error(`Платёж ЮKassa ${payment.id}: сумма не совпадает с тарифом ${tariff.id}`)
-      return NextResponse.json({ received: true })
-    }
-
-    await activatePaidPromotion({
-      orderId,
-      listingId,
-      userId,
-      tariff,
-      providerPaymentId: payment.id,
-      paymentCreatedAt: new Date(payment.created_at),
+    const order = await prisma.promotionOrder.findFirst({
+      where: { provider: "YOOKASSA", providerCheckoutId: payment.id },
+      select: { id: true, listingId: true, userId: true, tariffId: true, providerCheckoutId: true },
     })
+    if (order) {
+      await applyYookassaPromotionPayment(order, payment)
+    } else if (payment.metadata?.orderId) {
+      // A notification can arrive before the checkout route saves its ID.
+      const creating = await prisma.promotionOrder.findFirst({
+        where: {
+          id: payment.metadata.orderId, provider: "YOOKASSA", providerCheckoutId: null, status: "PENDING",
+          listingId: payment.metadata.listingId || "", userId: payment.metadata.userId || "",
+        },
+        select: { id: true },
+      })
+      if (creating) return NextResponse.json({ error: "Заказ ещё создаётся" }, { status: 503 })
+    }
 
     return NextResponse.json({ received: true })
   } catch (error) {

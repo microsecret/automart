@@ -46,6 +46,7 @@ let sequence = 0
 
 try {
   const { activatePaidPromotion } = await import(await load("src/lib/promotion-activation.ts"))
+  const { applyYookassaPromotionPayment, reconcileSingleOrder } = await import(await load("src/lib/promotion-reconcile.ts"))
   const { PROMOTION_TARIFFS } = await import(await load("src/lib/promotion-tariffs.ts"))
   const { BOOST, PREMIUM, CHATS, CHATS_DAILY, CHATS_THRICE } = PROMOTION_TARIFFS
   check("legacy chats tariff keeps original paid order price and duration", CHATS.id === "chats" && CHATS.amountRub === 300 && CHATS.durationDays === 30)
@@ -133,6 +134,18 @@ try {
   const reviewOrder = await db.promotionOrder.findUniqueOrThrow({ where: { id: inactiveOrder.id } })
   check("review retains confirmed payment details", reviewOrder.status === "REVIEW_REQUIRED" && reviewOrder.providerPaymentId === `isolated-${inactiveOrder.id}` && reviewOrder.paidAt !== null)
   check("inactive listing gets warning without referral accrual", await db.notification.count({ where: { userId: inactive.user.id, title: "Платёж требует проверки" } }) === 1 && referralCalls.length === callsBeforeInactive)
+
+  const checkedListing = await fixture({}, "PAUSED")
+  const checkoutId = `${marker}-checkout`
+  const checkedOrder = await orderFor(checkedListing, CHATS_DAILY, { providerCheckoutId: checkoutId })
+  const providerPayment = { id: checkoutId, status: "succeeded", paid: true, amount: { value: "300.00", currency: "RUB" }, created_at: paymentCreatedAt.toISOString() }
+  check("a different checkout cannot cancel or activate this order", await applyYookassaPromotionPayment(checkedOrder, {
+    ...providerPayment, id: "other-checkout", status: "canceled", paid: false,
+  }) === "unknown" && (await db.promotionOrder.findUniqueOrThrow({ where: { id: checkedOrder.id } })).status === "PENDING")
+  check("confirmed payment for a paused listing returns a review status", await applyYookassaPromotionPayment(checkedOrder, providerPayment) === "review_required")
+  check("replayed confirmation remains in review", await applyYookassaPromotionPayment(checkedOrder, providerPayment) === "review_required")
+  check("checkout return reports a stored review status", await reconcileSingleOrder(await db.promotionOrder.findUniqueOrThrow({ where: { id: checkedOrder.id } })) === "review_required")
+  check("a settled paid order can be checked without contacting the provider", await reconcileSingleOrder(await db.promotionOrder.findUniqueOrThrow({ where: { id: daily.id } })) === "activated")
 
   for (const [label, mutation] of [
     ["soft-deleted", { deletedAt: new Date() }],

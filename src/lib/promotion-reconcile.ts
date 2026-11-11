@@ -1,7 +1,42 @@
 import { prisma } from "@/lib/prisma"
 import { getPromotionTariff } from "@/lib/promotion-tariffs"
 import { activatePaidPromotion, markPromotionOrderFailed } from "@/lib/promotion-activation"
-import { fetchYookassaPayment, paymentMatchesAmount, yookassaConfig } from "@/lib/yookassa"
+import { fetchYookassaPayment, paymentMatchesAmount, yookassaConfig, type YookassaPayment } from "@/lib/yookassa"
+
+export type PromotionPaymentStatus = "activated" | "pending" | "canceled" | "review_required" | "unknown"
+
+type YookassaOrder = {
+  id: string
+  listingId: string
+  userId: string
+  tariffId: string
+  providerCheckoutId: string | null
+}
+
+export async function applyYookassaPromotionPayment(
+  order: YookassaOrder,
+  payment: YookassaPayment,
+): Promise<PromotionPaymentStatus> {
+  const tariff = getPromotionTariff(order.tariffId)
+  if (payment.id !== order.providerCheckoutId || !tariff || !paymentMatchesAmount(payment, tariff.amountRub)) {
+    console.warn(`Сверка оплаты: платёж не соответствует заказу ${order.id}`)
+    return "unknown"
+  }
+  if (payment.status === "canceled") {
+    await markPromotionOrderFailed(order.id, "FAILED")
+    return "canceled"
+  }
+  if (payment.status !== "succeeded" || !payment.paid) return "pending"
+
+  const paymentCreatedAt = new Date(payment.created_at)
+  if (Number.isNaN(+paymentCreatedAt)) return "unknown"
+  const result = await activatePaidPromotion({
+    orderId: order.id, listingId: order.listingId, userId: order.userId,
+    tariff, providerPaymentId: payment.id, paymentCreatedAt,
+  })
+  if (result === "activated" || result === "already_active") return "activated"
+  return result === "listing_inactive" ? "review_required" : "unknown"
+}
 
 /**
  * Сверка неоплаченных заказов с кассой.
@@ -31,17 +66,19 @@ export type ReconcileResult = {
   checked: number
   activated: number
   failed: number
+  reviewRequired: number
   skipped: number
 }
 
 export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
   const config = yookassaConfig()
-  if (!config) return { checked: 0, activated: 0, failed: 0, skipped: 0 }
+  if (!config) return { checked: 0, activated: 0, failed: 0, reviewRequired: 0, skipped: 0 }
 
   const now = Date.now()
   const orders = await prisma.promotionOrder.findMany({
     where: {
       status: "PENDING",
+      provider: "YOOKASSA",
       /* Номер платежа ЮKassa до оплаты лежит в providerCheckoutId — его
          пишет создание платежа. providerPaymentId заполняет только
          активация, и у ждущих заказов он всегда пуст: прежний отбор по
@@ -68,7 +105,7 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
     orderBy: { createdAt: "asc" },
   })
 
-  const result: ReconcileResult = { checked: 0, activated: 0, failed: 0, skipped: 0 }
+  const result: ReconcileResult = { checked: 0, activated: 0, failed: 0, reviewRequired: 0, skipped: 0 }
 
   for (const order of orders) {
     if (!order.providerCheckoutId) continue
@@ -76,42 +113,11 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
 
     try {
       const payment = await fetchYookassaPayment(config, order.providerCheckoutId)
-      const tariff = getPromotionTariff(order.tariffId)
-
-      if (!tariff) {
-        result.skipped += 1
-        continue
-      }
-
-      if (payment.status === "canceled") {
-        await markPromotionOrderFailed(order.id, "FAILED")
-        result.failed += 1
-        continue
-      }
-
-      if (payment.status !== "succeeded" || !payment.paid) {
-        /* Человек ещё не заплатил — это обычное дело, а не ошибка. */
-        result.skipped += 1
-        continue
-      }
-
-      /* Та же проверка суммы, что и в уведомлении: платёж на рубль с
-         чужими метаданными не должен включить тариф за 3990. */
-      if (!paymentMatchesAmount(payment, tariff.amountRub)) {
-        console.error(`Сверка: платёж ${payment.id} не совпадает по сумме с тарифом ${tariff.id}`)
-        result.skipped += 1
-        continue
-      }
-
-      await activatePaidPromotion({
-        orderId: order.id,
-        listingId: order.listingId,
-        userId: order.userId,
-        tariff,
-        providerPaymentId: payment.id,
-        paymentCreatedAt: new Date(payment.created_at),
-      })
-      result.activated += 1
+      const status = await applyYookassaPromotionPayment(order, payment)
+      if (status === "activated") result.activated += 1
+      else if (status === "canceled") result.failed += 1
+      else if (status === "review_required") result.reviewRequired += 1
+      else result.skipped += 1
     } catch (error) {
       /* Сбой по одному заказу не должен ронять весь проход: следующий
          запуск попробует его снова. */
@@ -134,43 +140,21 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
  *
  * Поэтому спрашиваем кассу сразу, как только он вернулся.
  */
-export async function reconcileSingleOrder(orderId: string, userId: string): Promise<"activated" | "pending" | "canceled" | "unknown"> {
+export async function reconcileSingleOrder(
+  order: YookassaOrder & { provider: string; status: string },
+): Promise<PromotionPaymentStatus> {
+  if (order.status === "PAID") return "activated"
+  if (order.status === "REVIEW_REQUIRED") return "review_required"
+  if (order.status === "FAILED" || order.status === "CANCELED") return "canceled"
+  if (order.status !== "PENDING") return "unknown"
   const config = yookassaConfig()
-  if (!config) return "unknown"
-
-  const order = await prisma.promotionOrder.findFirst({
-    /* Только свой заказ: чужой id не должен запускать обращение к кассе. */
-    where: { id: orderId, userId, status: "PENDING", providerCheckoutId: { not: null } },
-    select: { id: true, listingId: true, userId: true, tariffId: true, providerCheckoutId: true },
-  })
-  if (!order?.providerCheckoutId) return "unknown"
+  if (!config || order.provider !== "YOOKASSA" || !order.providerCheckoutId) return "pending"
 
   try {
     const payment = await fetchYookassaPayment(config, order.providerCheckoutId)
-    const tariff = getPromotionTariff(order.tariffId)
-    if (!tariff) return "unknown"
-
-    if (payment.status === "canceled") {
-      await markPromotionOrderFailed(order.id, "FAILED")
-      /* Отдельный ответ: человек отменил оплату в кассе, а страница
-         показывала «Платёж принят». */
-      return "canceled"
-    }
-
-    if (payment.status !== "succeeded" || !payment.paid) return "pending"
-    if (!paymentMatchesAmount(payment, tariff.amountRub)) return "pending"
-
-    const result = await activatePaidPromotion({
-      orderId: order.id,
-      listingId: order.listingId,
-      userId: order.userId,
-      tariff,
-      providerPaymentId: payment.id,
-      paymentCreatedAt: new Date(payment.created_at),
-    })
-    return result === "activated" || result === "already_active" ? "activated" : "unknown"
+    return await applyYookassaPromotionPayment(order, payment)
   } catch (error) {
-    console.error(`Сверка заказа ${orderId}:`, error instanceof Error ? error.message : error)
+    console.error(`Сверка заказа ${order.id}:`, error instanceof Error ? error.message : error)
     return "pending"
   }
 }

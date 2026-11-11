@@ -16,7 +16,7 @@
  * разошёлся бы с ним при первой правке.
  */
 
-const baseUrl = process.env.NEXTAUTH_URL || process.env.SITE_URL || "http://127.0.0.1:3000"
+const baseUrl = process.env.AUTOMART_LOOPBACK_URL || "http://127.0.0.1:4001"
 const token = process.env.PARSER_TOKEN
 
 if (!token) {
@@ -41,7 +41,7 @@ try {
   } else {
     console.log(
       `Сверка: проверено ${payload?.checked ?? 0}, включено ${payload?.activated ?? 0}, `
-      + `отменено ${payload?.failed ?? 0}, ждут оплаты ${payload?.skipped ?? 0}`,
+      + `отменено ${payload?.failed ?? 0}, на ручную проверку ${payload?.reviewRequired ?? 0}, без изменений ${payload?.skipped ?? 0}`,
     )
   }
 } catch (error) {

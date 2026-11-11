@@ -40,39 +40,11 @@ export async function POST(request: NextRequest) {
   const listingId = typeof body?.listingId === "string" ? body.listingId : null
   if (!listingId) return NextResponse.json({ error: "Не указано объявление" }, { status: 400 })
   const orderId = typeof body?.orderId === "string" ? body.orderId : null
-  if (orderId) {
-    const order = await prisma.promotionOrder.findFirst({
-      where: { id: orderId, listingId, userId: session.user.id },
-      select: { id: true, status: true },
-    })
-    const status = order?.status === "PENDING" ? await reconcileSingleOrder(order.id, session.user.id)
-      : order?.status === "PAID" ? "activated"
-      : order?.status === "FAILED" || order?.status === "CANCELED" ? "canceled" : "unknown"
-    return NextResponse.json({ status }, { headers: rateLimitHeaders(limit) })
-  }
-
-  /* Последний ждущий заказ по этому объявлению: человек только что
-     вернулся со страницы оплаты, и это он и есть. */
   const order = await prisma.promotionOrder.findFirst({
-    where: { listingId, userId: session.user.id, status: "PENDING" },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
+    where: { ...(orderId ? { id: orderId } : {}), listingId, userId: session.user.id },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, listingId: true, userId: true, status: true, tariffId: true, provider: true, providerCheckoutId: true },
   })
-
-  if (!order) {
-    /* Заказа в ожидании нет: либо уведомление кассы уже всё сделало, либо
-       оплата сорвалась. Раньше оба случая отвечали «unknown», а страница
-       показывала его как успех — «Оплата прошла, продвижение включено»
-       даже тому, у кого платёж отменён. Смотрим последний заказ. */
-    const last = await prisma.promotionOrder.findFirst({
-      where: { listingId, userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      select: { status: true },
-    })
-    const status = last?.status === "PAID" ? "activated" : last?.status === "FAILED" || last?.status === "CANCELED" ? "canceled" : "unknown"
-    return NextResponse.json({ status }, { headers: rateLimitHeaders(limit) })
-  }
-
-  const result = await reconcileSingleOrder(order.id, session.user.id)
-  return NextResponse.json({ status: result }, { headers: rateLimitHeaders(limit) })
+  const status = order ? await reconcileSingleOrder(order) : "unknown"
+  return NextResponse.json({ status }, { headers: rateLimitHeaders(limit) })
 }

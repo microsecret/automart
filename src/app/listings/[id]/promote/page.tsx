@@ -22,7 +22,7 @@ export default function PromotePage() {
   const insideMiniApp = useTelegramSession()
   /* Что показывать после возвращения из кассы: ждём подтверждения или
      продвижение уже включилось. */
-  const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending" | "unknown">("idle")
+  const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending" | "review_required" | "unknown">("idle")
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [pending, setPending] = useState(false)
@@ -83,8 +83,8 @@ export default function PromotePage() {
           return
         }
         /* Касса не ответила или заказа нет: успехом это не называем. */
-        if (payload?.status === "unknown") {
-          setCheckState("unknown")
+        if (payload?.status === "unknown" || payload?.status === "review_required") {
+          setCheckState(payload.status)
           return
         }
 
@@ -169,6 +169,8 @@ export default function PromotePage() {
               <Text size="sm" c="var(--market-success-text)">
                 {checkState === "activated"
                   ? "Оплата прошла, продвижение включено."
+                  : checkState === "review_required"
+                    ? "Оплата получена. Администратор проверит заказ и поможет с активацией или возвратом."
                   : checkState === "unknown"
                     ? "Не видим подтверждения оплаты. Если деньги списаны — напишите в поддержку, проверим вручную."
                   : checkState === "checking"

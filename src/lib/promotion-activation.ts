@@ -63,8 +63,9 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
       const settled = await tx.promotionOrder.findUnique({
         where: { id: orderId }, select: { status: true, providerPaymentId: true },
       })
-      return settled?.status === "PAID" && settled.providerPaymentId === providerPaymentId
-        ? "already_active" : "listing_inactive"
+      if (settled?.providerPaymentId !== providerPaymentId) return "order_mismatch"
+      if (settled.status === "PAID") return "already_active"
+      return settled.status === "REVIEW_REQUIRED" ? "listing_inactive" : "order_mismatch"
     }
 
     const current = await tx.listing.findFirst({
