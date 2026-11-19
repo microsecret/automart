@@ -1397,8 +1397,8 @@
 @media (max-width: 48em) {
   .catalog-presets {
     flex-wrap: nowrap;
-    margin-inline: -12px;
-    padding: 0 12px 2px;
+    min-width: 0;
+    padding: 3px;
     overflow-x: auto;
     scrollbar-width: none;
   }
