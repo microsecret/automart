@@ -109,6 +109,7 @@ try {
   check("revoked JWT cannot mutate favorites", (await request("/api/favorites", oldCookie, { method: "POST", body: JSON.stringify({ listingId: listing.id }) })).status === 401)
   check("revoked JWT cannot remove favorites", (await request(`/api/favorites?listingId=${listing.id}`, oldCookie, { method: "DELETE" })).status === 401)
   check("revoked JWT cannot reach upload parsing or file writes", (await request("/api/upload", oldCookie, { method: "POST" })).status === 401)
+  check("revoked JWT cannot reach vehicle creation", (await request("/api/vehicles", oldCookie, { method: "POST", body: "{}" })).status === 401)
   const deniedContact = await request(`/api/listings/${listing.id}`, oldCookie, { method: "POST" })
   check("revoked JWT cannot reveal seller phone", deniedContact.status === 401 && !deniedContact.body?.phone)
   check("fresh version JWT works after reset", (await request("/api/favorites?countOnly=true", await sessionCookie(owner, 1))).status === 200)
@@ -131,6 +132,7 @@ try {
   const deletedContact = await request(`/api/listings/${listing.id}`, deletedCookie, { method: "POST" })
   check("deleted account JWT cannot reveal seller phone", deletedContact.status === 401 && !deletedContact.body?.phone)
   check("deleted account cannot reach public file upload", (await request("/api/upload", deletedCookie, { method: "POST" })).status === 401)
+  check("deleted account cannot reach vehicle creation", (await request("/api/vehicles", deletedCookie, { method: "POST", body: "{}" })).status === 401)
 
   console.log(`SESSION_REVOCATION_VERIFIED checks=${checks.length}`)
 } finally {

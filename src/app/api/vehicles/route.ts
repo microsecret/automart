@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import { requireUser } from "@/lib/api-session-guard"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
@@ -90,13 +88,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: "Необходимо войти в аккаунт" },
-        { status: 401 }
-      )
-    }
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
     const createLimit = rateLimit(`vehicle-create:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 60 * 60 * 1000, maxRequests: 15 })
     if (!createLimit.success) {
       return NextResponse.json(
