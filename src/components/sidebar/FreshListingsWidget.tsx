@@ -4,7 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
-import WidgetSkeleton from "./WidgetSkeleton"
+import WidgetSkeleton, { WidgetUnavailable } from "./WidgetSkeleton"
 import SidebarEmblem from "./SidebarEmblem"
 import { formatPriceShort } from "@/lib/format"
 
@@ -39,7 +39,7 @@ const VISIBLE = 5
 const FETCH_LIMIT = 10
 
 export default function FreshListingsWidget() {
-  const { data } = useSWR<ListingsResponse>(
+  const { data, error, isValidating, mutate } = useSWR<ListingsResponse>(
     `/api/listings?limit=${FETCH_LIMIT}&sort=newest`,
     fetchJson,
     { revalidateOnFocus: false },
@@ -62,6 +62,7 @@ export default function FreshListingsWidget() {
     )
     .slice(0, VISIBLE)
 
+  if (!data && error) return <WidgetUnavailable tone="listings" title="Свежие объявления" retry={() => void mutate()} isRetrying={isValidating} />
   if (!data) return <WidgetSkeleton tone="listings" />
   if (listings.length < 3) return null
 

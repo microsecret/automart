@@ -1,4 +1,24 @@
-import { Box } from "@mantine/core"
+import { Box, Button, Text } from "@mantine/core"
+import SidebarEmblem from "./SidebarEmblem"
+
+export function WidgetUnavailable({ tone, title, retry, isRetrying }: {
+  tone: "news" | "lots" | "listings"
+  title: string
+  retry: () => void
+  isRetrying: boolean
+}) {
+  return (
+    <section className="side-widget" data-tone={tone} aria-label={title}>
+      <div className="side-widget__head">
+        <Text component="h2" className="side-widget__title"><SidebarEmblem tone={tone} />{title}</Text>
+      </div>
+      <Box className="side-widget__body" p="sm">
+        <Text size="xs" c="var(--market-muted)" role="status">Временно недоступно</Text>
+        <Button size="compact-xs" variant="subtle" mt={5} loading={isRetrying} onClick={retry}>Повторить</Button>
+      </Box>
+    </section>
+  )
+}
 
 /**
  * Заглушка виджета на время загрузки.

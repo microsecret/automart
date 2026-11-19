@@ -4,7 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
-import WidgetSkeleton from "./WidgetSkeleton"
+import WidgetSkeleton, { WidgetUnavailable } from "./WidgetSkeleton"
 import SidebarEmblem from "./SidebarEmblem"
 import { formatPriceShort } from "@/lib/format"
 import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
@@ -87,7 +87,7 @@ function diverseByModel(lots: Lot[], limit: number): Lot[] {
 }
 
 export default function FreshLotsWidget() {
-  const { data } = useSWR<AuctionsResponse>(`/api/auctions?limit=${FETCH_LIMIT}&view=brief`, fetchJson, {
+  const { data, error, isValidating, mutate } = useSWR<AuctionsResponse>(`/api/auctions?limit=${FETCH_LIMIT}&view=brief`, fetchJson, {
     revalidateOnFocus: false,
   })
 
@@ -97,6 +97,7 @@ export default function FreshLotsWidget() {
   const all = (data?.listings ?? []).filter(isShowcaseReady)
   const lots = diverseByModel(all, VISIBLE)
 
+  if (!data && error) return <WidgetUnavailable tone="lots" title="Свежие лоты" retry={() => void mutate()} isRetrying={isValidating} />
   if (!data) return <WidgetSkeleton tone="lots" />
   if (lots.length < 3) return null
 

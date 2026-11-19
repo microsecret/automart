@@ -418,10 +418,10 @@ function AuctionsPageContent() {
             площадкам («Encar: 3722 · CarSensor: 2241 · … · AutoSale: 1»)
             шла прямо в текст и на телефоне занимала три строки служебных
             цифр; теперь она в подсказке для тех, кому интересно. */}
-        <Text size="xs" c="var(--market-muted)" className="section-summary" title={sourceSummary ? `Источники: ${sourceSummary}` : undefined}>
+        {data?.pagination && <Text size="xs" c="var(--market-muted)" className="section-summary" title={sourceSummary ? `Источники: ${sourceSummary}` : undefined}>
           {(data?.pagination?.total || 0).toLocaleString("ru-RU")} авто в каталоге
           {analytics?.sources?.length ? ` · ${analytics.sources.length} ${plural(analytics.sources.length, "площадка", "площадки", "площадок")}` : ""} · доставка в РФ
-        </Text>
+        </Text>}
 
         {/* Быстрый выбор кузова — по макету площадки.
 
@@ -743,9 +743,9 @@ function AuctionsPageContent() {
             </Paper>
         )}
 
-        {isLoading ? (
+        {isLoading && !data ? (
           <ResultsGridSkeleton count={8} />
-        ) : error ? (
+        ) : error && !data ? (
           <AsyncErrorState
             title="Не удалось загрузить лоты"
             description="Аукционный каталог временно не отвечает. Повторите запрос через несколько секунд."

@@ -139,7 +139,9 @@ token="$(env_value TELEGRAM_BOT_TOKEN)"
 chats="$(env_value TELEGRAM_MODERATION_CHAT_IDS)"
 if [ -n "$token" ] && [ -n "$chats" ]; then
   text="⚠️ LeWheel: база зависла (журнал не менялся ${age} с, независимое чтение заблокировано). Сайт перезапущен автоматически, каталог отвечает ${code}. Улики на сервере: ${incident}"
-  for chat in ${chats//,/ }; do
+  read -r -a chat_ids <<< "${chats//,/ }"
+  for chat in "${chat_ids[@]}"; do
+    [[ "$chat" =~ ^-?[0-9]+$ ]] || continue
     curl -s -m 15 -o /dev/null "https://api.telegram.org/bot${token}/sendMessage" \
       --data-urlencode "chat_id=${chat}" --data-urlencode "text=${text}" || log "оповещение в ${chat} не ушло"
   done

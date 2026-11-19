@@ -422,6 +422,9 @@ export default function HomePage(p: HomePageProps = {}) {
   /* Класс home-page-stack — опора для правила ширины в globals.css: на
      главной ограничитель снят с колонки контента ради героя во всю
      ширину, и ширину держат вместо него прямые дети этой стопки. */
+  const daylightScene = p.categorySlug && ["cars", "trucks", "moto"].includes(p.categorySlug)
+    ? p.categorySlug : null
+
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className={`home-page-stack${hasCategoryArtwork ? " catalog-artwork-page" : ""}`}>
       {p.showHero !== false && !p.categorySlug && (
@@ -609,9 +612,13 @@ export default function HomePage(p: HomePageProps = {}) {
           ним: они отвечают на вопрос «что тут ещё есть», который
           возникает уже после просмотра товара. */}
 
-      <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${hasCategoryArtwork ? " catalog-heading--illustrated" : ""}`}>
+      <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${hasCategoryArtwork ? " catalog-heading--illustrated" : ""}${daylightScene ? " catalog-heading--daylight" : ""}`}>
         <Group gap="md" wrap="nowrap" className="catalog-heading__identity">
-          {hasCategoryArtwork && <NextImage
+          {daylightScene ? <picture className="catalog-heading__picture">
+            <source media="(max-width: 46em)" srcSet={`/images/ui/catalog-daylight-v1/${daylightScene}-880.webp`} />
+            <NextImage src={`/images/ui/catalog-daylight-v1/${daylightScene}-1760.webp`}
+              width={1760} height={880} alt="" aria-hidden="true" unoptimized loading="eager" fetchPriority="high" />
+          </picture> : hasCategoryArtwork && <NextImage
             src={`/images/ui/category-v1/${p.categorySlug}-320.webp`}
             width={144} height={96} alt="" aria-hidden="true" unoptimized
             className="catalog-heading__artwork" draggable={false}
@@ -633,7 +640,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
             Условие на data: пока данные не пришли, строка остаётся —
             иначе она мигала бы при каждой загрузке. */}
-        <Group gap="xs" wrap="nowrap" display={data && (data.pagination?.total ?? 0) === 0 ? "none" : undefined}>
+        <Group gap="xs" wrap="wrap" className="catalog-heading__controls" display={data && (data.pagination?.total ?? 0) === 0 ? "none" : undefined}>
           {/* Частые сортировки — кнопками, а не пунктами списка.
 
               «Дешевле» и «Дороже» — то, чем пользуются чаще всего на любой
@@ -1085,10 +1092,10 @@ export default function HomePage(p: HomePageProps = {}) {
            заглушку. Поисковый робот получал «Загружаем объявления»
            вместо семи карточек. */
         <ResultsGridSkeleton count={8} />
-      ) : error ? (
+      ) : error && !data ? (
         <AsyncErrorState
           title="Не удалось загрузить объявления"
-          description="Каталог временно не отвечает. Проверьте подключение и повторите запрос."
+          description="Каталог временно не отвечает. Повторите запрос через несколько секунд."
           onRetry={() => mutate()}
         />
       ) : !data?.listings?.length ? (

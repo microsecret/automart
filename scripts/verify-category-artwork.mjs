@@ -51,7 +51,10 @@ try {
       await page.locator(".lw-detail-action").first().waitFor()
       check(`${key}: loads`, response.status() === 200)
       check(`${key}: single semantic heading`, await page.locator("h1").count() === 1)
-      check(`${key}: artwork loaded with correct category`, await page.locator(".catalog-heading__artwork").evaluate((image, category) => image.complete && image.naturalWidth > 0 && image.src.includes(`/${category}-320.webp`) && image.alt === "" && image.getAttribute("aria-hidden") === "true", category))
+      const daylight = ["cars", "moto", "trucks"].includes(category)
+      const selector = daylight ? ".catalog-heading__picture img" : ".catalog-heading__artwork"
+      const width = daylight ? mobile ? 880 : 1760 : 320
+      check(`${key}: artwork loaded with correct category`, await page.locator(selector).evaluate((image, suffix) => image.complete && image.naturalWidth > 0 && image.currentSrc.endsWith(suffix) && image.alt === "" && image.getAttribute("aria-hidden") === "true", `/${category}-${width}.webp`))
       check(`${key}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: compact header`, await page.locator(".catalog-heading").evaluate((node) => node.getBoundingClientRect().height <= 230))
       check(`${key}: enamel detail actions and original destinations`, await page.locator(".lw-detail-action").evaluateAll((nodes) => nodes.length === 4 && nodes.every((node) => getComputedStyle(node).backgroundImage.includes("gradient") && /\/listings\/(vehicle|part)\/audit-/.test(node.getAttribute("href")))))

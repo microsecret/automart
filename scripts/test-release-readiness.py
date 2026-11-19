@@ -11,12 +11,15 @@ import unittest
 class Handler(http.server.BaseHTTPRequestHandler):
     status = 200
     body = {"listings": [], "pagination": {"total": 0}}
+    failed_collection = "/api/listings?"
 
     def do_GET(self):
-        if self.path.startswith("/api/listings?"):
-            self.send_response(type(self).status)
+        if self.path.startswith(("/api/listings?", "/api/auctions?", "/api/news?")):
+            failed = self.path.startswith(type(self).failed_collection)
+            key = "news" if self.path.startswith("/api/news?") else "listings"
+            self.send_response(type(self).status if failed else 200)
             self.end_headers()
-            self.wfile.write(json.dumps(type(self).body).encode())
+            self.wfile.write(json.dumps(type(self).body if failed else {key: [], "pagination": {"total": 0}}).encode())
         else:
             self.send_response(200)
             self.end_headers()
@@ -39,8 +42,8 @@ class ReadinessTest(unittest.TestCase):
         cls.server.server_close()
         cls.thread.join()
 
-    def run_probe(self, status, body):
-        Handler.status, Handler.body = status, body
+    def run_probe(self, status, body, collection="/api/listings?"):
+        Handler.status, Handler.body, Handler.failed_collection = status, body, collection
         env = {**os.environ, "AUTOMART_LOCAL_URL": f"http://127.0.0.1:{self.server.server_port}"}
         result = subprocess.run(
             ["bash", str(Path(__file__).with_name("verify-or-rollback.sh")), "--check-only"],
@@ -54,7 +57,9 @@ class ReadinessTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_database_error_is_unhealthy_despite_healthy_home(self):
-        self.assertEqual(self.run_probe(500, {"error": "database locked"}).returncode, 1)
+        for collection in ("/api/listings?", "/api/auctions?", "/api/news?"):
+            with self.subTest(collection=collection):
+                self.assertEqual(self.run_probe(500, {"error": "database locked"}, collection).returncode, 1)
 
     def test_error_payload_with_status_200_is_unhealthy(self):
         self.assertEqual(self.run_probe(200, {"error": "database locked"}).returncode, 1)

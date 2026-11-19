@@ -19,6 +19,50 @@
   pointer-events: none;
   user-select: none;
 }
+.catalog-heading--daylight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: auto;
+  padding: 0;
+  gap: 10px;
+  background: none;
+  box-shadow: none;
+}
+.catalog-heading--daylight .catalog-heading__identity {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(120px, 11vw, 170px);
+  padding: 20px clamp(16px, 3vw, 34px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--lw-scene-surface);
+}
+.catalog-heading__picture,
+.catalog-heading--daylight .catalog-heading__identity::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.catalog-heading__picture {
+  left: 27%;
+  z-index: -2;
+}
+.catalog-heading__picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right 56%;
+}
+.catalog-heading--daylight .catalog-heading__identity::after {
+  z-index: -1;
+  content: "";
+  background: linear-gradient(90deg, var(--lw-scene-surface) 26%, rgb(5 43 49 / 93%) 39%, rgb(5 43 49 / 42%) 62%, transparent 81%);
+}
+.catalog-heading--daylight .catalog-heading__copy { max-width: min(37ch, 60%); }
+.catalog-heading--daylight .catalog-heading__controls {
+  justify-self: end;
+  justify-content: flex-end;
+}
 .catalog-artwork-page .catalog-filter-panel {
   border-top-color: var(--lw-copper) !important;
 }
@@ -42,4 +86,10 @@
   .catalog-heading--illustrated .catalog-heading__identity { gap: 10px; }
   .catalog-heading__artwork { flex-basis: 90px; width: 90px; height: 66px; }
   .catalog-heading--illustrated .catalog-heading__copy h1 { font-size: 23px !important; line-height: 1.2; }
+  .catalog-heading--daylight { padding: 0; gap: 9px; }
+  .catalog-heading__picture { left: 14%; }
+  .catalog-heading--daylight .catalog-heading__identity::after {
+    background: linear-gradient(90deg, var(--lw-scene-surface), rgb(5 43 49 / 91%) 33%, rgb(5 43 49 / 30%) 68%, transparent);
+  }
+  .catalog-heading--daylight .catalog-heading__controls { justify-self: start; justify-content: flex-start; }
 }

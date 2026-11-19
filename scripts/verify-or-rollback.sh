@@ -22,6 +22,25 @@ VERIFY_DIR="$(mktemp -d /tmp/automart-verify.XXXXXX)" || exit 1
 trap 'rm -f "$VERIFY_DIR/home.html" "$VERIFY_DIR/catalog.json"; rmdir "$VERIFY_DIR"' EXIT
 CURL_OPTIONS=(--connect-timeout 3 --max-time 10)
 
+check_collection() {
+  local route="$1" key="$2" status
+  status="$(curl -s --connect-timeout 3 --max-time 22 -o "$VERIFY_DIR/catalog.json" -w '%{http_code}' "$BASE$route")"
+  [ "$status" = "200" ] || { echo "verify: $route ответил $status"; return 1; }
+  python3 - "$VERIFY_DIR/catalog.json" "$key" <<'PY'
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as response:
+        body = json.load(response)
+    assert isinstance(body, dict) and isinstance(body.get(sys.argv[2]), list)
+    pagination = body.get("pagination")
+    assert isinstance(pagination, dict)
+    assert type(pagination.get("total")) is int and pagination["total"] >= 0
+except (OSError, ValueError, AssertionError):
+    print("verify: неверный JSON коллекции " + sys.argv[2])
+    sys.exit(1)
+PY
+}
+
 check() {
   local html status css css_status
   for _ in 1 2 3 4 5 6; do
@@ -34,26 +53,13 @@ check() {
   [ -n "$css" ] || { echo "verify: в разметке главной нет стилей"; return 1; }
   css_status="$(curl -s "${CURL_OPTIONS[@]}" -o /dev/null -w '%{http_code}' "$BASE$css")"
   [ "$css_status" = "200" ] || { echo "verify: стиль $css ответил $css_status"; return 1; }
-  local catalog_status
-  catalog_status="$(curl -s "${CURL_OPTIONS[@]}" -o "$VERIFY_DIR/catalog.json" -w '%{http_code}' "$BASE/api/listings?limit=1")"
-  [ "$catalog_status" = "200" ] || { echo "verify: каталог/база ответили $catalog_status"; return 1; }
-  python3 - "$VERIFY_DIR/catalog.json" <<'PY' || return 1
-import json, sys
-try:
-    with open(sys.argv[1], encoding="utf-8") as response:
-        body = json.load(response)
-    assert isinstance(body, dict) and isinstance(body.get("listings"), list)
-    pagination = body.get("pagination")
-    assert isinstance(pagination, dict)
-    assert type(pagination.get("total")) is int and pagination["total"] >= 0
-except (OSError, ValueError, AssertionError):
-    print("verify: неверный JSON каталога/базы")
-    sys.exit(1)
-PY
+  check_collection '/api/listings?limit=1' listings || return 1
+  check_collection '/api/auctions?view=card&limit=1' listings || return 1
+  check_collection '/api/news?limit=1' news || return 1
   for path in /auctions /parts-finder /services/fuel-map; do
     curl -s "${CURL_OPTIONS[@]}" -o /dev/null "$BASE$path" || true
   done
-  echo "verify: главная 200, CSS 200, каталог/база 200 с корректным JSON"
+  echo "verify: главная, CSS, объявления, аукционы и новости доступны"
 }
 
 if check; then

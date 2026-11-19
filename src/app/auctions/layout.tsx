@@ -3,7 +3,13 @@ import type { Metadata } from "next"
 import "./auctions-page.css"
 import styles from "./auction-intro.module.css"
 import AuctionsIntroGate from "./AuctionsIntroGate"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import Image from "next/image"
+
+const auctionBenefits = [
+  { image: "cost", height: 320, title: "Расчёт под ключ", text: "В карточке машины: пошлина, утильсбор и доставка до вашего города" },
+  { image: "lots", height: 480, title: "Живые лоты площадок", text: "Фотографии, пробег и состояние кузова — как в аукционном листе" },
+  { image: "delivery", height: 449, title: "Доставка до России", text: "Маршрут, сроки и таможенное оформление рассчитываем заранее" },
+] as const
 
 /* Обновление задаётся здесь, а не в самой странице.
 
@@ -72,22 +78,20 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             в сплошной строке глазу не за что зацепиться, и человек не видит,
             чем этот каталог отличается от чужой витрины. Разметка остаётся
             серверной — она нужна поисковику вместе с заголовком. */}
-        <ul className={`${styles.facts} auctions-intro__facts`}>
-          <li data-tone="price">
-            <span className={styles.icon} aria-hidden="true"><ServiceArtwork kind="valuation" size={48} /></span>
-            <strong>Расчёт под ключ</strong>
-            <span>В карточке машины: пошлина, утильсбор и доставка до вашего города</span>
-          </li>
-          <li data-tone="lots">
-            <span className={styles.icon} aria-hidden="true"><ServiceArtwork kind="history-check" size={48} /></span>
-            <strong>Живые лоты площадок</strong>
-            <span>Фотографии, пробег и состояние кузова — как в аукционном листе</span>
-          </li>
-          <li data-tone="delivery">
-            <span className={styles.icon} aria-hidden="true"><ServiceArtwork kind="deliveries" size={48} /></span>
-            <strong>Доставка до России</strong>
-            <span>Маршрут, сроки и таможенное оформление рассчитываем заранее</span>
-          </li>
+        <ul className={`${styles.facts} auctions-intro__facts`} aria-label="Услуги аукционного каталога">
+          {auctionBenefits.map(({ image, height, title, text }) => (
+            <li key={image}>
+              <picture>
+                <source sizes="(max-width: 48em) 78vw, 30vw" srcSet={`/images/ui/catalog-daylight-v1/${image}-480.webp 480w, /images/ui/catalog-daylight-v1/${image}-960.webp 960w`} />
+                <Image src={`/images/ui/catalog-daylight-v1/${image}-960.webp`} alt=""
+                  width={960} height={height} unoptimized loading="lazy" />
+              </picture>
+              <div className={styles.factCopy}>
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </div>
+            </li>
+          ))}
         </ul>
       </div>
       </AuctionsIntroGate>

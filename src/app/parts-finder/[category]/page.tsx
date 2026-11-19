@@ -9,6 +9,15 @@ import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
+import { IconArrowUpRight, IconSearch } from "@tabler/icons-react"
+
+const partArtwork: Readonly<Record<string, string>> = {
+  ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
+  ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
+  WHEELS: "wheels", COOLING: "cooling", BODY: "body", EXHAUST: "exhaust",
+  STEERING: "steering", INTERIOR: "interior", ACCESSORIES: "accessories",
+  CONSUMABLES: "consumables", CHEMICALS: "chemicals", TOOLS: "tools",
+}
 
 /**
  * Страница категории запчастей.
@@ -97,13 +106,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
 
   const lower = summary.label.toLocaleLowerCase("ru-RU")
   const others = partCategoriesWithPages().filter((row) => row.slug !== summary.slug)
-  const artworkKind = ({
-    ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
-    ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
-    WHEELS: "wheels", COOLING: "cooling",
-    BODY: "body", EXHAUST: "exhaust", STEERING: "steering", INTERIOR: "interior",
-    ACCESSORIES: "accessories", CONSUMABLES: "consumables", CHEMICALS: "chemicals", TOOLS: "tools",
-  } as Readonly<Record<string, string>>)[summary.partType]
+  const artworkKind = partArtwork[summary.partType]
   const scenicKind = ["engine", "brakes", "suspension", "electrical", "lighting"].includes(artworkKind) ? artworkKind : null
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
@@ -160,6 +163,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
             {summary.subcategories.map((name) => (
               <li key={name}>
                 <Link href={`/parts-finder?partType=${summary.partType}&q=${encodeURIComponent(name)}`}>
+                  <IconSearch size={17} aria-hidden="true" />
                   {name}
                 </Link>
               </li>
@@ -168,16 +172,20 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         </section>
       )}
 
-      <section>
-        <h2 className="part-category__subtitle">Другие категории запчастей</h2>
-        <ul className="part-category__list part-category__list--plain">
+      <nav aria-labelledby="part-category-nav">
+        <h2 id="part-category-nav" className="part-category__subtitle">Другие категории запчастей</h2>
+        <ul className="part-category__list part-category__list--navigation">
           {others.map((row) => (
             <li key={row.slug}>
-              <Link href={`/parts-finder/${row.slug}`}>{row.label}</Link>
+              <Link href={`/parts-finder/${row.slug}`}>
+                {partArtwork[row.partType] && <PartCategoryArtwork kind={partArtwork[row.partType]} compact />}
+                <span>{row.label}</span>
+                <IconArrowUpRight size={16} aria-hidden="true" />
+              </Link>
             </li>
           ))}
         </ul>
-      </section>
+      </nav>
 
       <p className="part-category__note">
         Не нашли нужную деталь? Оставьте заявку с маркой, моделью и номером —
