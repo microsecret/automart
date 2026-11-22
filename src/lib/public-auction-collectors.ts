@@ -61,6 +61,7 @@ type UnknownRecord = Record<string, unknown>
 
 const SOURCE_TIMEOUT_MS = 25_000
 const SOURCE_MAX_BYTES = 4 * 1024 * 1024
+const BEFORWARD_SITEMAP_MAX_BYTES = 8 * 1024 * 1024
 const SOURCE_HEADERS = {
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.8",
@@ -667,12 +668,16 @@ function jsonLdObjects(html: string) {
 }
 
 async function sourceHtml(source: PublicAuctionSource, url: string) {
-  const rangeHeaders = source === "BEFORWARD" && /\/detail\d+\.xml$/i.test(url)
-    ? { ...SOURCE_HEADERS, Range: "bytes=0-999999" }
+  const isBeforwardSitemap = source === "BEFORWARD" && /\/detail\d+\.xml$/i.test(url)
+  const headers = source === "GOONET" || source === "BEFORWARD"
+    ? { ...SOURCE_HEADERS, "Accept-Encoding": "gzip" }
     : SOURCE_HEADERS
   const response = await authorizedSourceGet(url, {
-    allowedHosts: SOURCE_HOSTS[source], headers: rangeHeaders,
-    timeoutMs: source === "BOBAEDREAM" ? 45_000 : SOURCE_TIMEOUT_MS, maxBytes: SOURCE_MAX_BYTES,
+    allowedHosts: SOURCE_HOSTS[source],
+    headers,
+    timeoutMs: source === "BOBAEDREAM" ? 45_000 : SOURCE_TIMEOUT_MS,
+    // Full BE FORWARD sitemaps are about 5.7 MB after decoding.
+    maxBytes: isBeforwardSitemap ? BEFORWARD_SITEMAP_MAX_BYTES : SOURCE_MAX_BYTES,
   })
   if (response.status === 404 || response.status === 410) throw new PublicListingUnavailableError(`Карточка ${source} снята с публикации`)
   if (!response.ok) throw new Error(`${source} вернул HTTP ${response.status}`)
