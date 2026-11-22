@@ -5,7 +5,7 @@ import type https from "node:https"
 import type { AddressInfo } from "node:net"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { requestTextOnce } from "../src/lib/authorized-source-http.ts"
+import { authorizedSourceGet, requestTextOnce, sourceProxyPoolStatus } from "../src/lib/authorized-source-http.ts"
 
 /* Источник прислал заголовки и половину тела, дальше — тишина или обрыв.
    При обрыве прежний промис не завершался никогда: так зависали 13%
@@ -59,6 +59,34 @@ test("полный ответ по-прежнему приходит целик�
     assert.equal(result.body, "<html>половина</html>")
   } finally {
     close()
+  }
+})
+
+test("CONNECT 407 сразу выводит прокси из ротации, не подменяя ошибку источника", async () => {
+  let rejected = 0
+  const proxy = http.createServer()
+  proxy.on("connect", (_request, socket) => {
+    rejected++
+    socket.end("HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+  })
+  const previous = process.env.AUCTION_PROXY_POOL
+  try {
+    await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve))
+    const port = (proxy.address() as AddressInfo).port
+    process.env.AUCTION_PROXY_POOL = `127.0.0.1:${port}:test:fixture`
+    const url = `https://127.0.0.1:${port}/source`
+    const options = { allowedHosts: new Set(["127.0.0.1"]), headers: {}, timeoutMs: 1_200, maxBytes: 4096 }
+    // The local fixture only speaks HTTP. Its direct TLS request must fail.
+    for (let pass = 0; pass < 2; pass++) {
+      await assert.rejects(authorizedSourceGet(url, options), (error: Error) => !error.message.includes("407"))
+      assert.equal(sourceProxyPoolStatus().quarantined, 1)
+    }
+    assert.equal(rejected, 1)
+  } finally {
+    if (previous === undefined) delete process.env.AUCTION_PROXY_POOL
+    else process.env.AUCTION_PROXY_POOL = previous
+    proxy.closeAllConnections()
+    proxy.close()
   }
 })
 

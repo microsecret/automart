@@ -27,6 +27,13 @@ flowchart LR
   SEO --> LandingMetadata["Canonical category and service landing metadata"]
 ```
 
+Auction transport in `src/lib/authorized-source-http.ts` quarantines a
+proxy immediately on HTTP 407 and skips quarantined proxies until their
+retry time. The existing direct request remains subject to the source
+host allowlist. `src/lib/nvidia-translate.ts` has its own proxy pool,
+bounded response/timeout handling and a configurable Nemotron 3.5 Bolt
+default. Originals remain available when translation fails.
+
 ## Task routing graph
 
 Fuel chat campaigns: `fuel-invite-broadcast.ts` and `fuel-digest-broadcast.ts`

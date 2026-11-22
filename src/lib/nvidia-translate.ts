@@ -1,27 +1,38 @@
 /**
  * ИИ-перевод текста на русский через NVIDIA API.
  *
- * Ключи ротируются при rate limit (429) и при отказе авторизации: один
- * отозванный ключ из набора не должен останавливать перевод, пока остальные
- * рабочие. Пауза включается только когда авторизацию отвергли все ключи.
+ * При ограничениях запросов и отказах авторизации используются оставшиеся
+ * ключи, пока не истёк общий бюджет запроса.
  */
 
-import { parseProxyList, proxyJsonPost, type ProxyEndpoint } from "@/lib/proxy-fetch"
+import { HttpsProxyAgent } from "https-proxy-agent"
+import { requestTextOnce } from "@/lib/authorized-source-http"
+import { parseProxyList } from "@/lib/proxy-fetch"
+import { isTranslationRefusal } from "@/lib/translation-refusal"
 
-const KEYS = (process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean)
+const KEYS = [...new Set((process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean))]
 const API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 
 // Провайдер отвечает 451 на запросы из региона сервера, поэтому обращения
 // идут через прокси. Список перебирается по кругу: один недоступный адрес не
 // должен останавливать перевод, пока остальные отвечают.
-const PROXIES = parseProxyList(process.env.NVIDIA_PROXIES)
+const PROXY_AUTH_RETRY_MS = 30 * 60_000
+const PROXIES = parseProxyList(process.env.NVIDIA_PROXIES).flatMap(({ host, port, username, password }) => {
+  const address = `http://${host}:${port}`
+  if (!URL.canParse(address)) return []
+  const url = new URL(address)
+  url.username = username || ""
+  url.password = password || ""
+  return [{ agent: new HttpsProxyAgent(url), retryAt: 0 }]
+})
 let proxyCursor = 0
 
-function nextProxy(): ProxyEndpoint | null {
-  if (!PROXIES.length) return null
-  const proxy = PROXIES[proxyCursor % PROXIES.length]
-  proxyCursor += 1
-  return proxy
+function nextProxy() {
+  for (let i = 0; i < PROXIES.length; i++) {
+    const proxy = PROXIES[proxyCursor++ % PROXIES.length]
+    if (proxy.retryAt <= Date.now()) return proxy
+  }
+  return null
 }
 
 /**
@@ -30,38 +41,33 @@ function nextProxy(): ProxyEndpoint | null {
  * без лишнего звена.
  */
 async function requestCompletion(apiKey: string, body: string, remainingBudgetMs: number) {
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }
+  const headers = { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${apiKey}` }
   const proxy = nextProxy()
   if (!proxy) {
+    if (PROXIES.length) throw new Error("Все настроенные прокси NVIDIA ожидают повторной проверки")
     const response = await fetch(API_URL, {
       method: "POST",
       signal: AbortSignal.timeout(Math.max(1, Math.min(20_000, remainingBudgetMs))),
       headers,
       body,
     })
-    return { status: response.status, ok: response.ok, text: () => response.text(), json: () => response.json() }
+    return response
   }
 
-  const response = await proxyJsonPost(API_URL, proxy, { headers, body, timeoutMs: Math.max(1, Math.min(30_000, remainingBudgetMs)) })
+  const response = await requestTextOnce(new URL(API_URL), proxy.agent, "POST", headers, body,
+    Math.min(12_000, remainingBudgetMs), 512_000)
+  if (response.status === 407) proxy.retryAt = Date.now() + PROXY_AUTH_RETRY_MS
   return {
     status: response.status,
-    ok: response.ok,
-    text: async () => response.text,
-    json: async () => JSON.parse(response.text),
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => JSON.parse(response.body),
   }
 }
-const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
+const DEFAULT_MODEL = "nvidia/nemotron-3.5-bolt-e4b"
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || DEFAULT_MODEL
 
-/**
- * Модель подбирается под длину текста.
- *
- * Крупная модель переводит описание грамотно, но тратит на него до тридцати
- * секунд — при десятке карточек прогон упирался в таймаут. На коротких полях
- * вроде цвета и города разницы в качестве нет: замер показал «Белый» и
- * «Пекин, район Чаоян» у обеих. Поэтому короткие поля уходят быстрой модели,
- * а описание остаётся за крупной — его читает покупатель.
- */
-const FAST_MODEL = process.env.NVIDIA_FAST_MODEL?.trim() || "meta/llama-3.1-8b-instruct"
+// Оператор может выбрать отдельную модель для коротких полей.
+const FAST_MODEL = process.env.NVIDIA_FAST_MODEL?.trim() || NVIDIA_MODEL
 const FAST_MODEL_MAX_CHARS = 24
 
 function pickModel(text: string) {
@@ -74,7 +80,6 @@ function pickModel(text: string) {
   const fallback = preferred === FAST_MODEL ? NVIDIA_MODEL : FAST_MODEL
   return retiredModels.has(fallback) ? null : fallback
 }
-const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 const RATE_LIMIT_BACKOFF_MS = 1_200
 const TRANSLATION_TOTAL_BUDGET_MS = 45_000
 // Ключ, отвергнутый провайдером, пропускается до конца жизни процесса:
@@ -95,7 +100,7 @@ const revokedKeys = new Set<string>()
  * если провайдер вернёт модель. */
 const retiredModels = new Set<string>()
 let currentKeyIdx = 0
-let authUnavailableUntil = 0
+let nextFailureLogAt = 0
 
 function getNextKey(): string | null {
   if (KEYS.length === 0) return null
@@ -259,13 +264,14 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
   }
 
   // Если уже кириллица — не переводим
-  if (/[\u0400-\u04FF]/.test(text) && !/[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(text)) {
+  if (CYRILLIC_SCRIPT.test(text) && !EAST_ASIAN_SCRIPT.test(text)) {
     return text
   }
 
-  if (Date.now() < authUnavailableUntil) return text
+  if (!KEYS.length || revokedKeys.size >= KEYS.length || !pickModel(text)) return text
+  if (PROXIES.length && PROXIES.every(({ retryAt }) => retryAt > Date.now())) return text
 
-  const maxRetries = KEYS.length || 1
+  const maxRetries = Math.max(KEYS.length, PROXIES.length, NVIDIA_MODEL === FAST_MODEL ? 1 : 2)
   const translationDeadline = Date.now() + TRANSLATION_TOTAL_BUDGET_MS
   let lastError: Error | null = null
 
@@ -298,6 +304,8 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
             { role: "user", content: text },
           ],
           temperature: 0,
+          stream: false,
+          ...(model === DEFAULT_MODEL ? { chat_template_kwargs: { enable_thinking: false } } : {}),
           // Лимит выводится из длины исходника. Фиксированные 2000 токенов
           // растягивали перевод описания в 200 символов до 30 секунд вместо
           // двух: провайдер тратит время на генерацию до потолка, а не до
@@ -313,7 +321,13 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
         lastError = new Error("NVIDIA API 429: rate limit on every key")
         // Короткая пауза перед следующим ключом: без неё импорт пробегает по
         // всем ключам за миллисекунды и упирается в тот же лимит.
-        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_BACKOFF_MS))
+        await new Promise((resolve) => setTimeout(resolve, Math.max(0, Math.min(RATE_LIMIT_BACKOFF_MS, translationDeadline - Date.now()))))
+        continue
+      }
+
+      if (res.status === 407) {
+        lastError = new Error("NVIDIA proxy rejected authorization (HTTP 407)")
+        if (PROXIES.every(({ retryAt }) => retryAt > Date.now())) break
         continue
       }
 
@@ -324,11 +338,7 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
         // и лоты сохранялись с непереведённым исходным текстом.
         revokedKeys.add(apiKey)
         lastError = new Error(`NVIDIA API ${res.status}: authorization failed`)
-        if (revokedKeys.size >= KEYS.length) {
-          // Рабочих ключей не осталось — только теперь имеет смысл пауза.
-          authUnavailableUntil = Date.now() + AUTH_FAILURE_COOLDOWN_MS
-          break
-        }
+        if (revokedKeys.size >= KEYS.length) break
         continue
       }
 
@@ -336,40 +346,45 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
         /* Модель снята с обслуживания навсегда — запоминаем и больше не
            зовём. Без этого каждый лот повторял тот же запрос, и настоящие
            поломки тонули в стене одинаковых строк. */
-        const errText = await res.text().catch(() => "unknown")
-        retiredModels.add(model)
+        if (!retiredModels.has(model)) {
+          retiredModels.add(model)
+          console.error("Translation model retired:", model)
+        }
         lastError = new Error(`NVIDIA API 410: модель ${model} снята с обслуживания`)
-        console.error("Translation model retired:", model, errText.slice(0, 200))
         continue
       }
 
       if (!res.ok) {
-        const errText = await res.text().catch(() => "unknown")
-        lastError = new Error(`NVIDIA API ${res.status}: ${errText}`)
+        lastError = new Error(`NVIDIA API HTTP ${res.status}`)
         if (res.status >= 400 && res.status < 500) break
         continue
       }
 
       const data = await res.json()
-      const translated = data?.choices?.[0]?.message?.content?.trim()
-
-      if (translated && translated.length > 0) {
-        if (EAST_ASIAN_SCRIPT.test(text) && (EAST_ASIAN_SCRIPT.test(translated) || !CYRILLIC_SCRIPT.test(translated))) {
-          lastError = new Error("Translation provider returned untranslated source script")
-          continue
-        }
-        rememberTranslation(cacheKey, translated)
-        void storeTranslation(cacheKey, text, translated, systemPrompt ? "model" : "text")
-        return translated
+      const choice = data?.choices?.[0]
+      const content = choice?.message?.content
+      const translated = typeof content === "string" ? content.trim() : ""
+      if (!translated || choice.finish_reason === "length" || isTranslationRefusal(translated)) {
+        lastError = new Error("Translation provider returned an empty, incomplete or refused translation")
+        continue
       }
-
-      lastError = new Error("Empty translation response")
+      const targetScript = systemPrompt ? /[A-Za-z]/ : CYRILLIC_SCRIPT
+      if (EAST_ASIAN_SCRIPT.test(translated) || !targetScript.test(translated)) {
+        lastError = new Error("Translation provider returned text outside the target script")
+        continue
+      }
+      rememberTranslation(cacheKey, translated)
+      void storeTranslation(cacheKey, text, translated, systemPrompt ? "model" : "text")
+      return translated
     } catch (err) {
       lastError = err as Error
     }
   }
 
-  console.error("Translation failed:", lastError?.message || "провайдер не вернул перевод и не сообщил причину")
+  if (Date.now() >= nextFailureLogAt) {
+    nextFailureLogAt = Date.now() + 60_000
+    console.error("Translation failed:", lastError?.message || "провайдер не вернул перевод и не сообщил причину")
+  }
   return text // fallback — вернуть оригинал
 }
 

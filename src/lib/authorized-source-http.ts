@@ -122,39 +122,35 @@ function transportCandidates(hostname: string) {
   const start = (stableStartIndex(hostname, agents.length) + rotation) % agents.length
   const ordered = [...agents.slice(start), ...agents.slice(0, start)]
   const available = ordered.filter((agent) => (proxyHealth.get(agent)?.retryAfter || 0) <= Date.now())
-  if (available.length) {
-    const proxyCandidates = available
-      .map((agent, index) => ({ agent, index, activeRequests: proxyHealth.get(agent)?.activeRequests || 0 }))
-      .sort((left, right) => left.activeRequests - right.activeRequests || left.index - right.index)
-      .slice(0, MAX_PROXY_ATTEMPTS_PER_REQUEST)
-      .map(({ agent }) => agent)
-    // Some public catalogues reject the shared proxy region even though the
-    // same allow-listed URL is available from the application server. Keep a
-    // single bounded direct attempt last so proxies remain the primary route
-    // without turning a regional proxy error into an empty country catalogue.
-    return [...proxyCandidates, directAgent]
-  }
-  return [
-    ...ordered.sort((left, right) => (proxyHealth.get(left)?.retryAfter || 0) - (proxyHealth.get(right)?.retryAfter || 0)).slice(0, 1),
-    directAgent,
-  ]
+  const proxyCandidates = available
+    .sort((left, right) => (proxyHealth.get(left)?.activeRequests || 0) - (proxyHealth.get(right)?.activeRequests || 0))
+    .slice(0, MAX_PROXY_ATTEMPTS_PER_REQUEST)
+  return [...proxyCandidates, directAgent]
 }
 
 function markProxySuccess(agent: https.Agent) {
   if (agent === directAgent) return
   const current = proxyHealth.get(agent) || initialProxyHealth()
-  proxyHealth.set(agent, { ...current, failures: 0, retryAfter: 0, completedRequests: current.completedRequests + 1 })
+  proxyHealth.set(agent, {
+    ...current,
+    failures: 0,
+    retryAfter: current.retryAfter > Date.now() ? current.retryAfter : 0,
+    completedRequests: current.completedRequests + 1,
+  })
 }
 
-function markProxyFailure(agent: https.Agent, retryAfterMs?: number) {
+function markProxyFailure(agent: https.Agent, retryAfterMs = 0, authorizationRejected = false) {
   if (agent === directAgent) return
   const current = proxyHealth.get(agent) || initialProxyHealth()
   const failures = current.failures + 1
   const exponentialDelay = Math.min(PROXY_QUARANTINE_MS * 2 ** Math.max(0, failures - PROXY_FAILURE_THRESHOLD), MAX_PROXY_QUARANTINE_MS)
+  const delay = authorizationRejected ? MAX_PROXY_QUARANTINE_MS : failures >= PROXY_FAILURE_THRESHOLD ? exponentialDelay : 0
   proxyHealth.set(agent, {
     ...current,
     failures,
-    retryAfter: failures >= PROXY_FAILURE_THRESHOLD ? Date.now() + Math.max(retryAfterMs || 0, exponentialDelay) : 0,
+    retryAfter: delay > 0
+      ? Math.max(current.retryAfter, Date.now() + Math.max(delay, retryAfterMs))
+      : current.retryAfter,
   })
 }
 
@@ -285,15 +281,17 @@ export async function authorizedSourceRequest(rawUrl: string, options: {
   let lastResponse: Awaited<ReturnType<typeof requestWithRedirects>> | null = null
   const candidates = transportCandidates(url.hostname)
   for (const [index, agent] of candidates.entries()) {
+    if ((proxyHealth.get(agent)?.retryAfter || 0) > Date.now()) continue
     const remainingMs = deadlineAt - Date.now()
     const attemptTimeoutMs = boundedSourceAttemptTimeout(remainingMs, candidates.length - index)
     if (attemptTimeoutMs <= 0) break
     updateActiveRequests(agent, 1)
     try {
       const response = await requestWithRedirects(url, agent, options.method || "GET", options.allowedHosts, options.headers, options.body, attemptTimeoutMs, options.maxBytes)
-      lastResponse = response
       if (agent !== directAgent && RETRYABLE_SOURCE_STATUSES.has(response.status)) {
-        markProxyFailure(agent, retryAfterMs(response.headers))
+        const authorizationRejected = response.status === 407
+        markProxyFailure(agent, retryAfterMs(response.headers), authorizationRejected)
+        if (!authorizationRejected) lastResponse = response
         continue
       }
       markProxySuccess(agent)
