@@ -4,6 +4,7 @@ import http from "node:http"
 import type https from "node:https"
 import type { AddressInfo } from "node:net"
 import test from "node:test"
+import { gzipSync } from "node:zlib"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { authorizedSourceGet, requestTextOnce, sourceProxyPoolStatus } from "../src/lib/authorized-source-http.ts"
 
@@ -59,6 +60,38 @@ test("полный ответ по-прежнему приходит целик�
     assert.equal(result.body, "<html>половина</html>")
   } finally {
     close()
+  }
+})
+
+test("gzip сохраняет текст, отклоняет слишком большой или повреждённый ответ", async () => {
+  const body = "<html>автомобиль</html>".repeat(100)
+  const compressed = gzipSync(body)
+  const server = http.createServer((request, response) => {
+    response.writeHead(200, { "Content-Encoding": "gzip" })
+    response.end(request.url === "/broken" ? compressed.subarray(0, -8) : compressed)
+  })
+  try {
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+    const { port } = server.address() as AddressInfo
+    const url = new URL(`http://127.0.0.1:${port}/`)
+    const headers = { "Accept-Encoding": "gzip" }
+    const result = await requestTextOnce(url, agent, "GET", headers, undefined, 2_000, Buffer.byteLength(body), send)
+    assert.equal(result.body, body)
+    await assert.rejects(
+      requestTextOnce(url, agent, "GET", headers, undefined, 2_000, compressed.length, send),
+      { code: "ERR_BUFFER_TOO_LARGE" },
+    )
+    await assert.rejects(
+      requestTextOnce(url, agent, "GET", headers, undefined, 2_000, compressed.length - 1, send),
+      /допустимый размер/,
+    )
+    await assert.rejects(
+      requestTextOnce(new URL("/broken", url), agent, "GET", headers, undefined, 2_000, Buffer.byteLength(body), send),
+      { code: "Z_BUF_ERROR" },
+    )
+  } finally {
+    server.closeAllConnections()
+    server.close()
   }
 })
 

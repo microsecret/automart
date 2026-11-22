@@ -1,5 +1,6 @@
 import https from "node:https"
 import type { IncomingHttpHeaders } from "node:http"
+import { gunzip } from "node:zlib"
 import { HttpsProxyAgent } from "https-proxy-agent"
 
 const HARD_PROXY_TCP_CAP = 50
@@ -215,13 +216,29 @@ export function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "P
       })
       response.once("end", () => {
         if (settled) return
-        settled = true
-        clearTimeout(hardDeadline)
-        resolve({
-          status: response.statusCode || 0,
-          headers: response.headers,
-          body: Buffer.concat(chunks).toString("utf8"),
-        })
+        const complete = (data: Buffer) => {
+          if (settled) return
+          settled = true
+          clearTimeout(hardDeadline)
+          resolve({
+            status: response.statusCode || 0,
+            headers: response.headers,
+            body: data.toString("utf8"),
+          })
+        }
+        const data = Buffer.concat(chunks, size)
+        if (size > 0 && response.headers["content-encoding"]?.trim().toLowerCase() === "gzip") {
+          // The wire size is already bounded. Cap the decompressed body too.
+          gunzip(data, { maxOutputLength: maxBytes }, (error, decoded) => {
+            if (error) {
+              fail(error)
+              return
+            }
+            complete(decoded)
+          })
+        } else {
+          complete(data)
+        }
       })
     })
     const hardDeadline = setTimeout(() => fail(new Error("Источник превысил общий лимит времени")), timeoutMs)

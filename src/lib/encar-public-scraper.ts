@@ -311,7 +311,7 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
   const catalogUrl = catalogUrlFrom(rawUrl)
   const response = await authorizedSourceGet(catalogUrl, {
     allowedHosts: ENCAR_ALLOWED_HOSTS,
-    headers: ENCAR_REQUEST_HEADERS,
+    headers: { ...ENCAR_REQUEST_HEADERS, "Accept-Encoding": "gzip" },
     timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
     maxBytes: 2_000_000,
   })
