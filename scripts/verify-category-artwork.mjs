@@ -55,6 +55,13 @@ try {
       const selector = daylight ? ".catalog-heading__picture img" : ".catalog-heading__artwork"
       const width = daylight ? mobile ? 880 : 1760 : 320
       check(`${key}: artwork loaded with correct category`, await page.locator(selector).evaluate((image, suffix) => image.complete && image.naturalWidth > 0 && image.currentSrc.endsWith(suffix) && image.alt === "" && image.getAttribute("aria-hidden") === "true", `/${category}-${width}.webp`))
+      if (["special", "water", "air"].includes(category)) {
+        check(`${key}: entire vehicle photograph fits the banner`, await page.locator(selector).evaluate((image) => {
+          const bounds = image.getBoundingClientRect()
+          return getComputedStyle(image).objectFit === "contain" && bounds.width > 180 && bounds.height > 100
+            && image.naturalWidth === 2 * image.naturalHeight
+        }))
+      }
       check(`${key}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: compact header`, await page.locator(".catalog-heading").evaluate((node) => node.getBoundingClientRect().height <= 240))
       check(`${key}: enamel detail actions and original destinations`, await page.locator(".lw-detail-action").evaluateAll((nodes) => nodes.length === 4 && nodes.every((node) => getComputedStyle(node).backgroundImage.includes("gradient") && /\/listings\/(vehicle|part)\/audit-/.test(node.getAttribute("href")))))

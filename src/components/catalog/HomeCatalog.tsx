@@ -614,7 +614,8 @@ export default function HomePage(p: HomePageProps = {}) {
 
       <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${hasCategoryArtwork ? " catalog-heading--illustrated" : ""}${daylightScene ? " catalog-heading--daylight" : ""}`}>
         <Group gap="md" wrap="nowrap" className="catalog-heading__identity">
-          {daylightScene ? <picture className="catalog-heading__picture">
+          {daylightScene ? <picture className="catalog-heading__picture"
+            data-full-frame={["special", "water", "air"].includes(daylightScene) || undefined}>
             <source media="(max-width: 46em)" srcSet={`/images/ui/catalog-daylight-v1/${daylightScene}-880.webp`} />
             <NextImage src={`/images/ui/catalog-daylight-v1/${daylightScene}-1760.webp`}
               width={1760} height={880} alt="" aria-hidden="true" unoptimized loading="eager" fetchPriority="high" />
