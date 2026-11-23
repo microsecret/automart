@@ -5,6 +5,7 @@ import { runTelegramCleanup } from "./telegram-cleanup-worker.mjs"
 const AUTO_DELETE_DELAY_MS = 5 * 60 * 1000
 const MIN_DELETE_DELAY_MS = 30_000
 const MAX_DELETE_DELAY_MS = 60 * 60 * 1000
+const cleanupCooldown = { until: 0 }
 
 function scheduleDelayMs() {
   const configured = Number(process.env.TELEGRAM_SYSTEM_MESSAGE_TTL_MS || "")
@@ -23,5 +24,5 @@ export async function scheduleTelegramMessageCleanup(chatId: string, messageId: 
 }
 
 export async function processDueTelegramMessageCleanup(limit = 50) {
-  return runTelegramCleanup({ store: prisma.telegramMessageCleanup, api: telegramApi }, limit)
+  return runTelegramCleanup({ store: prisma.telegramMessageCleanup, api: telegramApi, cooldown: cleanupCooldown }, limit)
 }

@@ -231,7 +231,7 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
   } : null
 
   return (
-    <main className="fuel-city">
+    <div className="fuel-city">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
       {faq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faq) }} />}
@@ -321,6 +321,6 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
         Цены носят справочный характер и могут отличаться от табло на заправке.
         Точнее всего их знают водители: отметьте цену на карте, если заметили расхождение.
       </p>
-    </main>
+    </div>
   )
 }

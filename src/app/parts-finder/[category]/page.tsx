@@ -124,7 +124,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
   }
 
   return (
-    <main className="part-category">
+    <div className="part-category">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
 
       <nav className="part-category__crumbs" aria-label="Навигация по разделу">
@@ -191,6 +191,6 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         Не нашли нужную деталь? Оставьте заявку с маркой, моделью и номером —
         продавцы и разборки откликнутся сами.
       </p>
-    </main>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { signInReason } from "../src/lib/signin-reason.ts"
+import { resolveSignInCallback, signInReason } from "../src/lib/signin-reason.ts"
 
 test("без адреса возврата остаётся общий заголовок", () => {
   assert.equal(signInReason(null).title, "Вход в аккаунт")
@@ -52,7 +52,26 @@ test("полный адрес своего сайта разбирается п�
 
 test("чужой домен не получает своей подписи", () => {
   // Подставленный извне адрес не должен управлять текстом страницы входа.
-  assert.equal(signInReason("https://example.com/listings/create/quick").title, "Вход, чтобы разместить объявление")
+  assert.equal(signInReason("https://example.com/listings/create/quick").title, "Вход в аккаунт")
+})
+
+test("возврат из авторизации сохраняет параметры заказа, закодированные значения и якорь", () => {
+  const route = "/listings/car/promote?order=original%26transaction&payment=success#payment"
+  assert.equal(resolveSignInCallback(route), route)
+  assert.equal(resolveSignInCallback(encodeURIComponent(route)), route)
+  assert.equal(resolveSignInCallback(`https://lewheel.ru${route}`), route)
+  assert.equal(resolveSignInCallback(`https://preview.example${route}`, "https://preview.example"), route)
+})
+
+test("адрес возврата проверяется по итоговому URL браузера", () => {
+  const origin = "https://lewheel.ru"
+  const foreignOrigin = "https://example.com"
+  const foreignUrl = new URL("/dashboard", foreignOrigin)
+  const networkAddress = foreignUrl.href.slice(foreignUrl.protocol.length)
+  assert.equal(resolveSignInCallback(foreignUrl.href, origin), null)
+  assert.equal(resolveSignInCallback(networkAddress, origin), null)
+  assert.equal(resolveSignInCallback("/" + String.fromCharCode(92) + networkAddress.slice(2), origin), null)
+  assert.equal(resolveSignInCallback(origin + "//dashboard", origin), null)
 })
 
 test("испорченный адрес не роняет страницу", () => {

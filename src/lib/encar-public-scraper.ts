@@ -11,6 +11,7 @@ const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_API_HOST = "api.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
 const ENCAR_REQUEST_TIMEOUT_MS = 20_000
+const ENCAR_OPTIONAL_POWER_TIMEOUT_MS = 8_000
 const ENCAR_ALLOWED_HOSTS = new Set([ENCAR_HOST, ENCAR_CATALOG_HOST, ENCAR_API_HOST])
 const ENCAR_REQUEST_HEADERS = {
   Accept: "text/html,application/xhtml+xml",
@@ -211,14 +212,14 @@ function isUnreliableLocationTranslation(source: string, translated: string) {
 }
 
 
-async function translateEncarLocation(value: string | null) {
+async function translateEncarLocation(value: string | null, deadlineAt: number) {
   if (!value) return null
   const deterministic = translateKnownEncarLocation(value)
   // Korean addresses are structured data. When all of their parts are known,
   // do not send them to an LLM: deterministic labels avoid explanatory prose
   // being stored in a location field.
   if (!/[\uAC00-\uD7AF]/.test(deterministic)) return deterministic
-  const translated = await translateToRussian(value)
+  const translated = await translateToRussian(value, undefined, deadlineAt)
   return isUnreliableLocationTranslation(value, translated) ? deterministic : translated
 }
 
@@ -349,14 +350,16 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
  * Отказ запроса не должен ломать импорт: без мощности лот сохраняется как и
  * раньше, просто утилизационный сбор будет посчитан по справочнику.
  */
-async function fetchEncarSellingPointPower(vehicleId: string): Promise<number | null> {
+async function fetchEncarSellingPointPower(vehicleId: string, deadlineAt: number): Promise<number | null> {
+  const timeoutMs = Math.min(ENCAR_OPTIONAL_POWER_TIMEOUT_MS, deadlineAt - Date.now())
+  if (timeoutMs <= 0) return null
   try {
     const response = await authorizedSourceGet(
       `https://${ENCAR_API_HOST}/v1/readside/diagnosis/vehicle/${vehicleId}/sellingpoint`,
       {
         allowedHosts: ENCAR_ALLOWED_HOSTS,
         headers: { ...ENCAR_REQUEST_HEADERS, Accept: "application/json", Referer: `https://${ENCAR_HOST}/` },
-        timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
+        timeoutMs,
         maxBytes: 200_000,
       },
     )
@@ -371,12 +374,14 @@ async function fetchEncarSellingPointPower(vehicleId: string): Promise<number | 
   }
 }
 
-export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<AuctionImportItem> {
+export async function scrapeEncarPublicListing(rawUrl: unknown, deadlineAt = Infinity): Promise<AuctionImportItem> {
   const { sourceUrl, requestedId } = sourceUrlFrom(rawUrl)
+  const timeoutMs = Math.min(ENCAR_REQUEST_TIMEOUT_MS, deadlineAt - Date.now())
+  if (timeoutMs <= 0) throw new Error("Истекло время проверки карточки Encar")
   const response = await authorizedSourceGet(sourceUrl, {
     allowedHosts: ENCAR_ALLOWED_HOSTS,
     headers: ENCAR_REQUEST_HEADERS,
-    timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
+    timeoutMs,
     maxBytes: 1_500_000,
   })
   if (response.status === 404 || response.status === 410) {
@@ -394,11 +399,6 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const spec = asRecord(base?.spec)
   const contact = asRecord(base?.contact)
   if (!base || !category || !advertisement || !spec) throw new Error("В карточке Encar отсутствуют обязательные данные автомобиля")
-
-  // Мощность запрашивается только когда основные поля её не дали: лишний
-  // запрос к площадке на каждый лот замедлил бы сбор без пользы.
-  const hasPower = Boolean(firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower))
-  const sellingPointPower = hasPower ? null : await fetchEncarSellingPointPower(requestedId)
 
   const advertisementStatus = asText(advertisement.status)
   if (advertisementStatus && advertisementStatus !== "ADVERTISE") {
@@ -449,6 +449,9 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const originalSpecs = [rawBody, rawFuel, rawTransmission, rawDrive, rawColor].filter(Boolean).join(" · ") || null
 
   const fuelType = normalizeAuctionFuelType(rawFuel)
+  const power = firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower)
+    ?? await fetchEncarSellingPointPower(requestedId, deadlineAt)
+    ?? lookupVehiclePower(make, model)
 
   return {
     source: "ENCAR",
@@ -469,13 +472,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     bodyType: normalizeEncarBodyType(rawBody),
     color: translateEncarColor(rawColor),
     engineVolume: fuelType === "ELECTRIC" ? null : firstPositiveInteger(spec.displacement),
-    // Порядок источников мощности: сначала поля самой площадки, затем её
-    // карточка характеристик, и лишь потом справочник по модели. Каждый
-    // следующий шаг менее точен, поэтому применяется только когда предыдущий
-    // ничего не дал.
-    power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower)
-      ?? sellingPointPower
-      ?? lookupVehiclePower(make, model),
+    power,
     driveType: normalizeAuctionDriveType(rawDrive) ?? deriveAuctionDriveTypeFromText(model),
     vin: asText(base.vin),
     lotNumber: requestedId,
@@ -485,6 +482,6 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     specsOrig: originalSpecs,
     equipment: equipment.length ? { totalReported: equipmentTotal && equipmentTotal >= equipment.length ? equipmentTotal : equipment.length, items: equipment } : null,
     conditionInfo,
-    location: await translateEncarLocation(asText(contact?.address)),
+    location: await translateEncarLocation(asText(contact?.address), deadlineAt),
   }
 }

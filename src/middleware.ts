@@ -71,6 +71,7 @@ export const config = {
     "/deliveries/:path*",
     "/favorites/:path*",
     "/listings/create/:path*",
+    "/listings/:id/promote",
     "/messages/:path*",
     "/notifications/:path*",
   ],

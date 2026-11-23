@@ -1016,26 +1016,9 @@ select {
     transition: background var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
   }
 
-  /* Подача объявления выделена всегда, а не только на своей странице.
-
-     Раньше заливку она получала лишь когда человек уже открыл форму — то
-     есть ровно тогда, когда подсказка не нужна. На остальных страницах
-     главное действие площадки было того же цвета, что и текущая вкладка,
-     и отличалось от неё только подложкой: пять одинаковых пунктов, среди
-     которых ничто не зовёт.
-
-     Янтарь, а не синий: синим окрашена активная вкладка, и второе синее
-     пятно рядом читалось бы как ещё одна «текущая страница». Текст тёмный
-     — на янтаре белый даёт контраст 2.1. */
-  /* Селектор с тегом, иначе цвет не применяется.
-   *
-   * Правило `.mobile-bottom-nav a` выше специфичнее одного класса и ставило
-   * подписи `--market-muted`. Замер на телефоне: серый текст на синей
-   * плашке давал контраст 1.01 в ночной теме и около 1.9 в дневной —
-   * подпись «Подать» не читалась в обеих. Кнопка самая заметная в нижнем
-   * меню, ради неё эта плашка и сделана. */
+  /* Акцент темнее в дневной теме и светлее в ночной. */
   .mobile-bottom-nav a.mobile-bottom-nav__accent {
-    color: var(--market-accent-ink);
+    color: var(--lw-scene-ink);
     background: var(--market-accent);
   }
 
@@ -1047,8 +1030,6 @@ select {
   /* На своей странице — та же плашка, но с рамкой: человек видит, что
      он уже здесь, и при этом кнопка не меняет цвет под ним. */
   .mobile-bottom-nav a.mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
-    color: var(--market-accent-ink);
-    background: var(--market-accent);
     box-shadow: inset 0 0 0 2px var(--market-primary);
   }
 
@@ -1060,6 +1041,10 @@ select {
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav a.mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
     background: var(--market-primary-soft);
+  }
+
+  :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav a.mobile-bottom-nav__accent {
+    color: var(--market-accent-ink);
   }
 
   /* Кнопка поддержки висит поверх страницы и на узком экране закрывала

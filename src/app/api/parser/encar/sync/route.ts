@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
-import { discoverEncarPublicListingUrls, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
+import { discoverEncarPublicListingUrls, isEncarListingUnavailableError, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 import { hasBearerToken } from "@/lib/bearer-token"
+import {
+  AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
+  AUCTION_SOURCE_STAGE_BUDGET_MS,
+  auctionSourceStageItemBudgetExceeded,
+  auctionSourceStageStatus,
+  remainingAuctionSourceItems,
+} from "@/lib/auction-sync-budget"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +24,8 @@ const MAX_CANDIDATES_PER_SYNC = 100
 export async function POST(request: NextRequest) {
   let syncRunId: string | null = null
   try {
+    const stageStartedAt = Date.now()
+    const deadlineAt = stageStartedAt + AUCTION_SOURCE_STAGE_BUDGET_MS
     if (!PARSER_TOKEN) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
@@ -50,44 +59,53 @@ export async function POST(request: NextRequest) {
     const items: AuctionImportItem[] = []
     const failed: Array<{ url: string; error: string }> = []
     const skippedByAge: Array<{ url: string; year: number; manufacturedMonth: string | null }> = []
-    let skippedKnown = 0
+    const pendingUrls = urls.filter((url) => !recentlyCheckedUrls.has(url))
+    const skippedKnown = urls.length - pendingUrls.length
+    let checked = 0
+    let deferred = 0
+    let unavailable = 0
+    let consecutiveFailures = 0
 
-    for (const url of urls) {
+    for (const [index, url] of pendingUrls.entries()) {
       if (items.length >= limit) break
-      if (recentlyCheckedUrls.has(url)) {
-        skippedKnown += 1
-        continue
+      if (auctionSourceStageItemBudgetExceeded(stageStartedAt)) {
+        deferred = remainingAuctionSourceItems(pendingUrls.length, index)
+        break
       }
+      checked++
       try {
-        const item = await scrapeEncarPublicListing(url)
+        const item = await scrapeEncarPublicListing(url, deadlineAt)
+        consecutiveFailures = 0
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
         else skippedByAge.push({ url, year: item.year, manufacturedMonth: item.manufacturedMonth || null })
       } catch (error) {
+        if (isEncarListingUnavailableError(error)) {
+          unavailable++
+          consecutiveFailures = 0
+          continue
+        }
         failed.push({ url, error: error instanceof Error ? error.message : "Не удалось разобрать карточку Encar" })
+        consecutiveFailures++
+        if (consecutiveFailures >= AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT) {
+          deferred = remainingAuctionSourceItems(pendingUrls.length, index + 1)
+          break
+        }
       }
     }
-    if (!items.length) {
-      const status = failed.length ? "FAILED" : "SUCCEEDED"
-      await prisma.auctionSyncRun.update({
-        where: { id: syncRun.id },
-        data: {
-          status, discovered: urls.length, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy,
-          error: failed.length ? `В выдаче нет пригодных карточек. ${summarizeItemFailures(failed, urls.length)}` : null, completedAt: new Date(),
-        },
-      })
-      return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed })
-    }
-
-    const result = await saveAuctionImportItems(items)
-    const status = failed.length ? "PARTIAL" : "SUCCEEDED"
+    const result = items.length ? await saveAuctionImportItems(items, deadlineAt) : { created: 0, updated: 0, translated: 0, qualityHold: 0, qualityRestored: 0 }
+    const status = auctionSourceStageStatus(checked, failed.length, deferred)
     await prisma.auctionSyncRun.update({
       where: { id: syncRun.id },
       data: {
         status, discovered: urls.length, imported: items.length, created: result.created,
         updated: result.updated, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy, completedAt: new Date(),
+        error: summarizeItemFailures(failed, checked),
       },
     })
-    return NextResponse.json({ success: true, status, discovered: urls.length, imported: items.length, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result })
+    return NextResponse.json({
+      success: true, status, discovered: urls.length, checked, deferred, unavailable,
+      imported: items.length, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result,
+    })
   } catch (error) {
     console.error("Encar sync error:", error)
     if (syncRunId) {

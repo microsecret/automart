@@ -11,18 +11,13 @@ import {
   Stack,
   Text,
   Alert,
-  Anchor,
-  Group,
   Divider,
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock, IconBrandTelegram } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import { resolveSignInCallback } from "@/lib/signin-reason"
 
 type ResendVerificationResponse = { message?: string }
-
-function getSafeCallbackUrl(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
-}
 
 export default function SignInForm() {
   const [loading, setLoading] = useState(false)
@@ -37,7 +32,7 @@ export default function SignInForm() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setVerificationState(params.get("verified"))
-    setCallbackUrl(getSafeCallbackUrl(params.get("callbackUrl")))
+    setCallbackUrl(resolveSignInCallback(params.get("callbackUrl"), window.location.origin) ?? "/dashboard")
     setFromTelegram(params.get("from") === "telegram")
   }, [])
 

@@ -213,7 +213,17 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             смысла, а между группами достаточно меньшего. */}
         <Group h="100%" gap={6} wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
-          {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
+          {onNavigationToggle && (
+            <Burger
+              hiddenFrom="md"
+              opened={navigationOpened}
+              onClick={onNavigationToggle}
+              size="sm"
+              aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"}
+              aria-expanded={navigationOpened}
+              aria-controls="site-section-navigation"
+            />
+          )}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
             <LeWheelBrand size={38} priority />
           </Link>

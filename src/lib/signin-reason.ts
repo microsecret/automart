@@ -24,6 +24,23 @@ const DEFAULT_REASON: SignInReason = {
   hint: "Почта или телефон и ваш пароль",
 }
 
+const DEFAULT_SITE_ORIGIN = "https://lewheel.ru"
+
+export function resolveSignInCallback(value: string | null | undefined, origin = DEFAULT_SITE_ORIGIN): string | null {
+  const target = value?.trim()
+  if (!target) return null
+
+  try {
+    // Decode a wrapped URL without changing escaped query values in a normal path.
+    const address = target.startsWith("%") ? decodeURIComponent(target) : target
+    const url = address.startsWith("/") ? new URL(address, origin) : new URL(address)
+    if (url.origin !== origin || !url.pathname.startsWith("/") || url.pathname.startsWith("//")) return null
+    return url.pathname + url.search + url.hash
+  } catch {
+    return null
+  }
+}
+
 /* Порядок важен: путь подачи объявления начинается с /listings, как и
    страница самого объявления, поэтому более частные правила идут раньше. */
 const REASONS: ReadonlyArray<{ match: RegExp; reason: SignInReason }> = [
@@ -91,24 +108,8 @@ const REASONS: ReadonlyArray<{ match: RegExp; reason: SignInReason }> = [
  * @param callbackUrl адрес, куда человек вернётся после входа
  */
 export function signInReason(callbackUrl: string | null | undefined): SignInReason {
-  const target = callbackUrl?.trim()
-  if (!target) return DEFAULT_REASON
-
-  /* Адрес приходит закодированным и может быть как полным, так и путём.
-     Чужой домен в callbackUrl означает попытку увести человека после
-     входа — такой адрес разбору не подлежит. */
-  let path: string
-  try {
-    const decoded = decodeURIComponent(target)
-    if (decoded.startsWith("/")) {
-      path = decoded
-    } else {
-      const url = new URL(decoded)
-      path = url.pathname
-    }
-  } catch {
-    return DEFAULT_REASON
-  }
-
+  const callback = resolveSignInCallback(callbackUrl)
+  if (!callback) return DEFAULT_REASON
+  const path = callback.split(/[?#]/, 1)[0]
   return REASONS.find((entry) => entry.match.test(path))?.reason || DEFAULT_REASON
 }

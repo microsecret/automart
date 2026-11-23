@@ -26,14 +26,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const group = groupBySlug(slug)
   if (!group) return { title: "Раздел не найден", robots: { index: false, follow: false } }
   const count = await countInGroup(group.key)
-  const lower = group.label.toLocaleLowerCase("ru-RU")
   return {
     title: `${group.label} — купить в магазинах LeWheel`,
     description: count > 0
       ? `${group.label}: ${count} предложений магазинов с ценами и сроками. Фильтры по характеристикам, производителю и наличию.`
       : `${group.label}: как выбрать, какие характеристики сравнивать и что требует закон. Подписка на поступление.`,
     alternates: { canonical: groupHref(group) },
-    /* Пустой раздел — не ответ на запрос «купить ${lower}»: в индекс
+    /* Пустой раздел — не ответ на запрос о покупке: в индекс
        страница попадает, когда в ней появляются товары. */
     robots: count > 0 ? { index: true, follow: true } : { index: false, follow: true },
   }
@@ -113,7 +112,7 @@ export default async function ProductGroupPage({ params }: Props) {
   }
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
@@ -200,6 +199,6 @@ export default async function ProductGroupPage({ params }: Props) {
           </div>
         </section>
       )}
-    </main>
+    </div>
   )
 }

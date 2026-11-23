@@ -48,7 +48,7 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
     .sort((a, b) => b.count - a.count)
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/catalogs">Каталоги</Link>
@@ -105,6 +105,6 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
           ))}
         </div>
       </section>
-    </main>
+    </div>
   )
 }

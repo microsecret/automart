@@ -121,7 +121,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
   const otherCount = store._count.parts - groupedTotal
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/">Главная</Link>
@@ -249,6 +249,6 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
           })),
         }}
       />
-    </main>
+    </div>
   )
 }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 import { hasBearerToken } from "@/lib/bearer-token"
+import { auctionSourceStageItemBudgetExceeded, auctionSourceStageStatus, remainingAuctionSourceItems } from "@/lib/auction-sync-budget"
 
 export const dynamic = "force-dynamic"
 
@@ -16,10 +17,13 @@ const PARSER_TOKEN = process.env.PARSER_TOKEN
 // dropped out of the catalogue. The collector gives this stage its own
 // 420-second timeout (scripts/run-encar-collector.sh).
 const MAX_LISTINGS_PER_REFRESH = 60
+const REFRESH_STAGE_BUDGET_MS = 360_000
 
 export async function POST(request: NextRequest) {
   let syncRunId: string | null = null
   try {
+    const stageStartedAt = Date.now()
+    const deadlineAt = stageStartedAt + REFRESH_STAGE_BUDGET_MS
     if (!PARSER_TOKEN) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
@@ -50,12 +54,19 @@ export async function POST(request: NextRequest) {
     let translated = 0
     let unavailable = 0
     let expired = 0
+    let checked = 0
+    let deferred = 0
     const failed: Array<{ id: string; error: string }> = []
 
-    for (const listing of listings) {
+    for (const [index, listing] of listings.entries()) {
+      if (auctionSourceStageItemBudgetExceeded(stageStartedAt, Date.now(), REFRESH_STAGE_BUDGET_MS)) {
+        deferred = remainingAuctionSourceItems(listings.length, index)
+        break
+      }
+      checked++
       try {
-        const item = await scrapeEncarPublicListing(listing.sourceUrl)
-        const result = await saveAuctionImportItems([item])
+        const item = await scrapeEncarPublicListing(listing.sourceUrl, deadlineAt)
+        const result = await saveAuctionImportItems([item], deadlineAt)
         created += result.created
         updated += result.updated
         translated += result.translated
@@ -86,17 +97,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const status = failed.length ? (listings.length === failed.length ? "FAILED" : "PARTIAL") : "SUCCEEDED"
+    const status = auctionSourceStageStatus(checked, failed.length, deferred)
     await prisma.auctionSyncRun.update({
       where: { id: syncRun.id },
       data: {
         status, discovered: listings.length, imported: created + updated, created, updated,
-        failed: failed.length, expired, completedAt: new Date(), error: summarizeItemFailures(failed, listings.length),
+        failed: failed.length, expired, completedAt: new Date(), error: summarizeItemFailures(failed, checked),
       },
     })
 
     return NextResponse.json({
-      success: true, status, checked: listings.length, refreshed: created + updated,
+      success: true, status, checked, deferred, refreshed: created + updated,
       refreshIntervalHours: refreshIntervalHours("ENCAR"), unavailable, expired, failed, created, updated, translated,
     })
   } catch (error) {

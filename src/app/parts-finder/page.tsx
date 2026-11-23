@@ -253,7 +253,7 @@ function PartsContent() {
   )
 
   return (
-    <main className={catalog.page}>
+    <div className={catalog.page}>
       <ShopBar />
 
       <nav className={catalog.crumbs} aria-label="Навигация">
@@ -399,13 +399,13 @@ function PartsContent() {
           Показать {data ? goods(total) : "товары"}
         </Button>
       </Drawer>
-    </main>
+    </div>
   )
 }
 
 export default function PartsFinderPage() {
   return (
-    <Suspense fallback={<Center py={80}><Loader size="sm" color="indigo" /></Center>}>
+    <Suspense fallback={<Center py={80} role="status" aria-label="Загрузка каталога"><Loader size="sm" color="indigo" /></Center>}>
       <PartsContent />
     </Suspense>
   )

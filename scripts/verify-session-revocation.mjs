@@ -86,6 +86,14 @@ try {
     } },
   }, include: { listings: true } })
   const listing = vehicle.listings[0]
+  const checkoutReturn = `/listings/${listing.id}/promote?tariff=chats_daily&order=audit-order&payment=success`
+  const guestCheckout = await fetch(`${base}${checkoutReturn}`, { redirect: "manual", signal: AbortSignal.timeout(20000) })
+  const checkoutRedirect = new URL(guestCheckout.headers.get("location") || "/", base)
+  check("guest promotion returns through sign-in with the selected tariff and order intact",
+    guestCheckout.status === 307 && checkoutRedirect.pathname === "/auth/signin"
+    && checkoutRedirect.searchParams.get("callbackUrl") === checkoutReturn)
+  const guestListing = await fetch(`${base}/listings/vehicle/${vehicle.id}`, { redirect: "manual", signal: AbortSignal.timeout(20000) })
+  check("guest can still open the public listing page", guestListing.status === 200)
   const oldCookie = await sessionCookie(owner, 0)
   const legacyCookie = await sessionCookie(owner, null)
   check("current version JWT can access protected API before reset", (await request("/api/favorites?countOnly=true", oldCookie)).status === 200)

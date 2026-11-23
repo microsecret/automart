@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import {
   IconBellRinging, IconBuildingStore, IconFileSpreadsheet, IconMessageCircle, IconSearch,
   IconShieldCheck, IconTruckDelivery, IconWorldWww,
@@ -42,7 +43,7 @@ const FAQ = [
 
 export default function SellPage() {
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <section className={styles.hero} aria-labelledby="sell-title">
         <div>
           <span className={styles.eyebrow}>Маркетплейс автотоваров</span>
@@ -53,7 +54,7 @@ export default function SellPage() {
           </p>
           <div className={styles.heroActions}>
             <a href="#form" className={styles.primary}><IconBuildingStore size={18} /> Открыть магазин</a>
-            <a href="/parts-finder" className={styles.secondary}>Посмотреть каталог</a>
+            <Link href="/parts-finder" className={styles.secondary}>Посмотреть каталог</Link>
           </div>
         </div>
         <div className={styles.flow} aria-hidden="true">
@@ -136,6 +137,6 @@ export default function SellPage() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   )
 }

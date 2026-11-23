@@ -24,7 +24,7 @@ export default async function AvtotovaryPage() {
   }).then((rows) => new Map(rows.map((row) => [row.productGroup as string, row._count._all]))).catch(() => new Map<string, number>())
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/">Главная</Link>
@@ -55,6 +55,6 @@ export default async function AvtotovaryPage() {
           </div>
         </section>
       ))}
-    </main>
+    </div>
   )
 }

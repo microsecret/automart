@@ -4,10 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Alert, Anchor, Button, Group, Paper, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconAt, IconBrandTelegram, IconCircleCheck, IconLock, IconPhone } from "@tabler/icons-react"
-
-function getSafeCallbackUrl(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
-}
+import { resolveSignInCallback } from "@/lib/signin-reason"
 
 const STEPS = [
   { icon: IconPhone, title: "Подтвердите телефон", text: "Отправьте свой контакт одной кнопкой" },
@@ -20,7 +17,8 @@ export default function SignUpForm() {
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
 
   useEffect(() => {
-    setCallbackUrl(getSafeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl")))
+    const params = new URLSearchParams(window.location.search)
+    setCallbackUrl(resolveSignInCallback(params.get("callbackUrl"), window.location.origin) ?? "/dashboard")
   }, [])
 
   return (

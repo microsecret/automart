@@ -85,7 +85,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   const display = data?.display || raw.toUpperCase()
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/">Главная</Link>
@@ -171,6 +171,6 @@ export default async function ArticlePage({ params, searchParams }: Props) {
           <Link href="/sell" className={styles.sellerButton}>Открыть магазин</Link>
         </section>
       ))}
-    </main>
+    </div>
   )
 }

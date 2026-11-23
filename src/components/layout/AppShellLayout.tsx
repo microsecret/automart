@@ -407,7 +407,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <AppHeader navigationOpened={mobileOpened} onNavigationToggle={toggleMobile} />
       </AppShell.Header>
 
-      <AppShell.Navbar className="market-app-navbar" p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
+      <AppShell.Navbar id="site-section-navigation" aria-label="Разделы площадки" className="market-app-navbar" p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
         <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={5}>
           {/* Зазор между блоками колонки — четыре пикселя вместо шести.
 
@@ -585,6 +585,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
             по экрану вслед за колонкой. */}
         <Box
           id="main-content"
+          tabIndex={-1}
           maw={isHome ? undefined : 1280}
           mx="auto"
           w="100%"

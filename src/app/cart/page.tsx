@@ -149,7 +149,7 @@ export default function CartPage() {
 
   if (result) {
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <section className={styles.success}>
           <IconCircleCheck size={48} stroke={1.5} className={styles.successIcon} />
           <h1 className={styles.title}>Заказ оформлен</h1>
@@ -171,13 +171,13 @@ export default function CartPage() {
             <Link href="/catalogs" className={styles.secondaryButton}>Продолжить покупки</Link>
           </div>
         </section>
-      </main>
+      </div>
     )
   }
 
   if (!cart.length) {
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <section className={styles.empty}>
           <span className={styles.emptyIcon}><IconShoppingCart size={34} stroke={1.5} /></span>
           <h1 className={styles.title}>Корзина пуста</h1>
@@ -187,12 +187,12 @@ export default function CartPage() {
             <Link href="/parts-finder" className={styles.secondaryButton}>Поиск запчастей</Link>
           </div>
         </section>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <header className={styles.head}>
         <h1 className={styles.title}>Корзина <span className={styles.count}>{goods(units || cart.length)}</span></h1>
         {groups.length > 1 && <p className={styles.muted}>Позиции из {groups.length} {groups.length % 10 === 1 && groups.length % 100 !== 11 ? "магазина" : "магазинов"} — каждый получит свой заказ.</p>}
@@ -322,6 +322,6 @@ export default function CartPage() {
           </form>
         </aside>
       </div>
-    </main>
+    </div>
   )
 }

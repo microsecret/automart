@@ -28,7 +28,7 @@ export default async function CatalogsPage() {
   const totalBrands = CATALOG_REGIONS.reduce((sum, region) => sum + catalogBrandsByRegion(region).length, 0)
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
 
       <nav className={styles.crumbs} aria-label="Навигация">
@@ -102,6 +102,6 @@ export default async function CatalogsPage() {
         </div>
         <Link href="/sell" className={styles.sellerButton}>Открыть магазин</Link>
       </section>
-    </main>
+    </div>
   )
 }

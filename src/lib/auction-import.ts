@@ -45,7 +45,7 @@ const IMPORT_COUNTRY_LABELS: Readonly<Record<string, string>> = {
   KR: "Корея", CN: "Китай", JP: "Япония", US: "США", DE: "Германия", EU: "Европа", AE: "ОАЭ",
 }
 
-async function localizeImportedDisplayValue(value: string | null, field: "color" | "location", country: string) {
+async function localizeImportedDisplayValue(value: string | null, field: "color" | "location", country: string, deadlineAt?: number) {
   const source = value?.trim()
   if (!source) return null
   if (CYRILLIC_TEXT.test(source) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(source)) return source
@@ -56,7 +56,7 @@ async function localizeImportedDisplayValue(value: string | null, field: "color"
   if (known) return known
   if (!FOREIGN_DISPLAY_TEXT.test(source)) return source
 
-  const translated = (await translateToRussian(source)).trim()
+  const translated = (await translateToRussian(source, undefined, deadlineAt)).trim()
   /* Проверки на кириллицу мало.
 
      Модель, получив короткое название города, отвечала: «Это не
@@ -135,7 +135,7 @@ export type AuctionImportSaveResult = {
   qualityRestored: number
 }
 
-export async function saveAuctionImportItems(items: AuctionImportItem[]) {
+export async function saveAuctionImportItems(items: AuctionImportItem[], translationDeadlineAt?: number) {
   const exchangeRates = await getAuctionExchangeRates()
   let created = 0
   let updated = 0
@@ -147,8 +147,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     const identity = auctionVehicleIdentity(item.make, item.model)
     const engineVolume = normalizeAuctionEngineVolumeCc(item.engineVolume, item.fuelType)
     const [displayColor, displayLocation] = await Promise.all([
-      localizeImportedDisplayValue(item.color, "color", item.country),
-      localizeImportedDisplayValue(item.location, "location", item.country),
+      localizeImportedDisplayValue(item.color, "color", item.country, translationDeadlineAt),
+      localizeImportedDisplayValue(item.location, "location", item.country, translationDeadlineAt),
     ])
     const existing = await prisma.auctionListing.findUnique({
       where: { source_sourceId: { source: item.source, sourceId: String(item.sourceId) } },
@@ -192,7 +192,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
          языковой модели за неё платный. */
       if (needsTranslationRefresh && passesPowerPolicy(item) && (item.descriptionOrig || item.specsOrig)) {
         try {
-          translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
+          translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig }, translationDeadlineAt)
         } catch {
           // A translation failure must not prevent the source inventory refresh.
         }
@@ -250,8 +250,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           specsOrig: item.specsOrig,
           ...(item.equipment !== undefined ? { equipment: item.equipment ? JSON.stringify(item.equipment) : null } : {}),
           ...(item.conditionInfo !== undefined ? { conditionInfo: item.conditionInfo ? JSON.stringify(item.conditionInfo) : null } : {}),
-          ...(translatedFields ? {
-            descriptionRu: translatedFields.descriptionRu,
+          ...(translatedFields && (hasTranslation || sourceTextChanged) ? {
+            descriptionRu: translatedFields.descriptionRu ?? (item.descriptionOrig === existing.descriptionOrig ? existing.descriptionRu : null),
             isTranslated: hasTranslation,
             translatedAt: hasTranslation ? new Date() : null,
           } : {}),
@@ -300,7 +300,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     let translatedSpecsRu: string | null = null
     if (passesPowerPolicy(item) && (item.descriptionOrig || item.specsOrig)) {
       try {
-        const translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
+        const translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig }, translationDeadlineAt)
         descriptionRu = translatedFields.descriptionRu
         translatedSpecsRu = translatedFields.specsRu
         if (hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu)) translated++

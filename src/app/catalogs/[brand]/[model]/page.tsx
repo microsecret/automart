@@ -58,7 +58,7 @@ export default async function CatalogModelPage({ params }: Props) {
     .map((unit) => ({ partType: unit.partType, label: unit.label, count: byUnit.get(unit.partType) ?? 0, spot: unit.spot! }))
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/catalogs">Каталоги</Link>
@@ -178,6 +178,6 @@ export default async function CatalogModelPage({ params }: Props) {
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -247,12 +247,13 @@ async function storeTranslation(key: string, sourceText: string, translated: str
   }
 }
 
-export async function translateToRussian(text: string, systemPrompt?: string): Promise<string> {
+export async function translateToRussian(text: string, systemPrompt?: string, deadlineAt = Infinity): Promise<string> {
   if (!text || text.trim().length === 0) return text
   // Ключ кэша учитывает режим: одно название в двух режимах даёт разный
   // результат, а общий ключ вернул бы чужой перевод.
   const cacheKey = systemPrompt ? `model:${text}` : text
   if (cache.has(cacheKey)) return cache.get(cacheKey)!
+  if (Date.now() >= deadlineAt) return text
 
   // Второй уровень кэша — база. Память живёт до перезапуска, и после деплоя
   // сборщик переводил те же названия заново: через прокси это десятки секунд
@@ -272,7 +273,8 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
   if (PROXIES.length && PROXIES.every(({ retryAt }) => retryAt > Date.now())) return text
 
   const maxRetries = Math.max(KEYS.length, PROXIES.length, NVIDIA_MODEL === FAST_MODEL ? 1 : 2)
-  const translationDeadline = Date.now() + TRANSLATION_TOTAL_BUDGET_MS
+  const translationDeadline = Math.min(deadlineAt, Date.now() + TRANSLATION_TOTAL_BUDGET_MS)
+  if (Date.now() >= translationDeadline) return text
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -392,10 +394,10 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
 export async function translateListingFields(fields: {
   description?: string | null
   specs?: string | null
-}): Promise<{ descriptionRu: string | null; specsRu: string | null }> {
+}, deadlineAt?: number): Promise<{ descriptionRu: string | null; specsRu: string | null }> {
   const translateField = async (value: string | null | undefined) => {
     if (!value) return null
-    const translated = await translateToRussian(value)
+    const translated = await translateToRussian(value, undefined, deadlineAt)
     // A provider/network failure deliberately returns the original. For Encar's
     // common Korean technical fields, show a deterministic Russian fallback
     // rather than storing the original as a successful translation.
