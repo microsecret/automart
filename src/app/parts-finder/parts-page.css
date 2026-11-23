@@ -611,8 +611,7 @@
   padding: 6px 10px 6px 6px;
   font-weight: 600;
 }
-.part-category__list--navigation a svg,
-.part-category__list--queries a svg {
+.part-category__list--navigation a svg {
   margin-inline-start: auto;
 }
 .part-category__nav-art {
@@ -641,7 +640,7 @@
   min-width: 0;
   gap: 2px;
   line-height: 1.25;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 .part-category__nav-copy small {
   font-size: 12px;
@@ -650,7 +649,7 @@
 }
 @media (max-width: 36em) {
   .part-category__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .part-category__list--navigation a svg, .part-category__list--queries a svg { display: none; }
+  .part-category__list--navigation a svg { display: none; }
   .part-category__nav-art { width: 42px; flex-basis: 42px; height: 42px; }
 }
 @media (max-width: 22em) {

@@ -146,6 +146,15 @@ try {
       check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 225))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
+      const cardLabels = page.locator(".part-category__nav-copy")
+      check(`${key}: card text stays inside its column`, await cardLabels.evaluateAll((labels) => {
+        return labels.length > 0 && labels.every((label) => {
+          const bounds = label.getBoundingClientRect()
+          const text = document.createRange()
+          text.selectNodeContents(label)
+          return [...text.getClientRects()].every((rect) => rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1)
+        })
+      }))
       if (["ENGINE", "BRAKES", "SUSPENSION", "ELECTRICAL", "LIGHTING"].includes(type)) {
         if (mobile) await page.getByRole("button", { name: "Открыть навигацию", exact: true }).click()
         const nav = page.locator(`.market-side-nav--part[href="/parts-finder/${slug}"]`)

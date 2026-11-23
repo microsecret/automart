@@ -9,7 +9,7 @@ import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
-import { IconArrowUpRight, IconSearch } from "@tabler/icons-react"
+import { IconArrowUpRight } from "@tabler/icons-react"
 
 const partArtwork: Readonly<Record<string, string>> = {
   ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
@@ -195,7 +195,6 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
                       : <PartCategoryArtwork kind={artworkKind} compact />}
                   </span>
                   <span className="part-category__nav-copy">{name}</span>
-                  <IconSearch size={17} aria-hidden="true" />
                 </Link>
               </li>
             ))}
