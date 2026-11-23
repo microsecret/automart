@@ -66,7 +66,12 @@ try {
         }))
       }
       check(`${key}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-      check(`${key}: bounded header`, await page.locator(".catalog-heading").evaluate((node, limit) => node.getBoundingClientRect().height <= limit, daylight && !mobile ? 360 : 240))
+      const header = page.locator(".catalog-heading")
+      check(`${key}: bounded banner and controls`, await header.evaluate((node, { daylight, mobile }) => {
+        const banner = node.querySelector(".catalog-heading__identity").getBoundingClientRect()
+        const limit = daylight ? mobile ? 280 : 360 : 240
+        return node.getBoundingClientRect().height <= limit && (!daylight || !mobile || banner.height <= 175)
+      }, { daylight, mobile }))
       check(`${key}: enamel detail actions and original destinations`, await page.locator(".lw-detail-action").evaluateAll((nodes) => nodes.length === 4 && nodes.every((node) => getComputedStyle(node).backgroundImage.includes("gradient") && /\/listings\/(vehicle|part)\/audit-/.test(node.getAttribute("href")))))
       const cards = page.locator(".listing-card")
       await cards.nth(1).locator('[data-empty-media="true"]').first().waitFor()
