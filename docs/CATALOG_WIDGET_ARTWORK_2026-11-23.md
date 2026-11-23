@@ -40,3 +40,9 @@ accessible names, original filter and link targets, and mobile overflow.
 - Built-in ImageGen transport brief. Full-bleed panoramic editorial daylight photography, a continuous photographed setting across the left third for the title, a large subject center-right, enough margin to show the complete silhouette, teal, copper and stone. Subjects are a sedan and crossover at a glass pavilion, an adventure motorcycle at a mountain overlook, a truck and van at a freight terminal, an excavator in a gravel yard, a cabin boat on a lake, and a propeller plane on a runway.
 - Built-in ImageGen part brief. Each category is a row-major sprite atlas of isolated three-dimensional automotive parts on transparent backgrounds. Center each part in its own cell with a clear gutter, consistent lighting and scale, using teal, brushed metal and copper. The order and search labels are in `src/components/parts/part-icon-source.ts`. Rim sizes share a rim icon.
 - Exported panoramas to 840, 1320 and 2080px WebP in `public/images/ui/transport-panorama-v1/`. Exported 144px translucent card icons to `public/images/ui/part-icons-v1/`. Related category cards reuse representative part icons.
+
+## Workshop banners and icon motion
+
+The built-in ImageGen workshop brief uses a continuous daylight service bay, an open left third for the heading, and complete parts with room between their edges and the frame. The 16 category subjects follow `PART_TYPES`. The catalog overview groups a complete motor, brake rotor and filters. The responsive 840, 960 and 1600px WebP assets live in `public/images/ui/parts-panorama-v1/`. Phones put the title below the image so it leaves the whole subject visible.
+
+Parts navigation uses each icon's own alpha as the mask for a 680ms highlight on pointer hover or keyboard focus. Reduced-motion users receive the standard focus and hover treatments. The `part-icon-shine.gif` recording demonstrates the interaction.

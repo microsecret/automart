@@ -10,7 +10,7 @@ import { IconAdjustmentsHorizontal, IconArrowRight, IconSearch, IconX } from "@t
 import { PART_SUBCATEGORIES, PART_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { parseImages } from "@/lib/format"
-import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
+import PartWorkshopBanner from "@/components/parts/PartWorkshopBanner"
 import { fetchJson } from "@/lib/api-client"
 import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, productGroupsOfDepartment, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { articleHref, looksLikeArticle } from "@/lib/article-number"
@@ -269,14 +269,14 @@ function PartsContent() {
         {group && <><span aria-hidden="true">›</span><span aria-current="page">{group.label}</span></>}
       </nav>
 
-      <SectionArtworkHeader scene="parts" title={title}>
+      <PartWorkshopBanner scene="overview" title={title}>
         <p>{data && total > 0 ? goods(total) : "Поиск по артикулу, марке автомобиля и VIN"}</p>
         {params.get("q") && looksLikeArticle(params.get("q") as string) && (
           <Link href={articleHref(params.get("q") as string)} className="parts-article-link">
             Все предложения и аналоги по номеру <b>{(params.get("q") as string).toUpperCase()}</b> <IconArrowRight size={15} aria-hidden="true" />
           </Link>
         )}
-      </SectionArtworkHeader>
+      </PartWorkshopBanner>
 
       {/* Плитки отделов — на входе в раздел. В выбранной группе вместо них
           строка соседних групп: тот же переход, а места втрое меньше. */}

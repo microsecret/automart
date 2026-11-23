@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import type { CSSProperties } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
@@ -7,26 +8,20 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
+import PartWorkshopBanner from "@/components/parts/PartWorkshopBanner"
 import { partIconSource } from "@/components/parts/part-icon-source"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
-
-const partArtwork: Readonly<Record<string, string>> = {
-  ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
-  ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
-  WHEELS: "wheels", COOLING: "cooling", BODY: "body", EXHAUST: "exhaust",
-  STEERING: "steering", INTERIOR: "interior", ACCESSORIES: "accessories",
-  CONSUMABLES: "consumables", CHEMICALS: "chemicals", TOOLS: "tools",
-}
-
-const scenicParts = new Set(["engine", "brakes", "suspension", "electrical", "lighting"])
 
 function PartNavigationIcon({ kind, label }: { kind: string; label?: string }) {
   const src = partIconSource(kind, label)
   return (
     <span className="part-category__nav-art" aria-hidden="true">
       {src
-        ? <Image src={src} alt="" width={144} height={144} unoptimized loading="lazy" draggable={false} />
+        ? <>
+          <Image src={src} alt="" width={144} height={144} unoptimized loading="lazy" draggable={false} />
+          <span className="part-category__nav-shine" style={{ "--part-icon-mask": `url("${src}")` } as CSSProperties} />
+        </>
         : <PartCategoryArtwork kind={kind} compact />}
     </span>
   )
@@ -119,8 +114,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
 
   const lower = summary.label.toLocaleLowerCase("ru-RU")
   const others = partCategoriesWithPages().filter((row) => row.slug !== summary.slug)
-  const artworkKind = partArtwork[summary.partType]
-  const scenicKind = scenicParts.has(artworkKind) ? artworkKind : null
+  const artworkKind = summary.partType.toLowerCase()
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
      человек видит, что попадёт в раздел запчастей, а не на случайную
@@ -146,17 +140,9 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         <span>{summary.label}</span>
       </nav>
 
-      <header data-part-scene={scenicKind || undefined} className={scenicKind ? "part-category__heading part-category__heading--scene" : artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
-        {scenicKind ? <picture>
-          <source media="(max-width: 600px)" srcSet={`/images/ui/scenic-v1/part-${scenicKind}-960.webp`} />
-          <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true"
-            unoptimized loading="eager" fetchPriority="high" className="part-category__scene" />
-        </picture> : artworkKind && <PartCategoryArtwork kind={artworkKind} />}
-        <div className="part-category__hero-copy">
-          <h1 className="part-category__title">{summary.label}</h1>
-          <p>Новые и б/у запчасти</p>
-        </div>
-      </header>
+      <PartWorkshopBanner scene={artworkKind} title={summary.label}>
+        <p>Новые и б/у запчасти</p>
+      </PartWorkshopBanner>
 
       <p className="part-category__lead">
         {summary.count > 0
@@ -195,7 +181,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
           {others.map((row) => {
             const labelId = `part-category-${row.slug}-label`
             const description = PART_SUBCATEGORIES[row.partType]?.slice(0, 2).join(" · ")
-            const artwork = partArtwork[row.partType]
+            const artwork = row.partType.toLowerCase()
             return (
               <li key={row.slug}>
                 <Link href={`/parts-finder/${row.slug}`} aria-labelledby={labelId} aria-describedby={description ? `${labelId}-description` : undefined}>

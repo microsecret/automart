@@ -48,12 +48,12 @@ try {
     ]) {
       const page = await context.newPage()
       const requests = []
-      page.on("request", request => { if (request.url().includes("/scenic-v1/")) requests.push(request.url()) })
+      page.on("request", request => { if (/\/(scenic-v1|parts-panorama-v1)\//.test(request.url())) requests.push(request.url()) })
       const name = `${key}-${width}-${theme}`
       check(name + ": HTTP 200", (await page.goto(base + path, { waitUntil: "networkidle" })).status() === 200)
       const image = page.locator(selector).first()
       await image.evaluate(img => img.decode())
-      const suffix = width <= 600 ? "-960.webp" : "-1600.webp"
+      const suffix = key === "engine" ? width <= 640 ? "-840.webp" : "-960.webp" : width <= 600 ? "-960.webp" : "-1600.webp"
       check(name + ": browser selected expected source", (await image.evaluate(img => img.currentSrc)).endsWith(suffix))
       check(name + ": no redundant large mobile download", width > 600 || requests.every(url => !url.endsWith("-1600.webp")))
       check(name + ": decorative image decoded", await image.evaluate(img => img.naturalWidth > 0 && img.alt === "" && img.getAttribute("aria-hidden") === "true"))

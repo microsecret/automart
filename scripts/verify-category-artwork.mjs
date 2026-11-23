@@ -134,7 +134,24 @@ try {
       await page.screenshot({ path: `${output}/${key}.png` })
       await page.close()
     }
-    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"], ["transmissiya", "transmission", "TRANSMISSION"], ["kolesa-i-diski", "wheels", "WHEELS"], ["ohlazhdenie", "cooling", "COOLING"], ["kuzov", "body", "BODY"], ["salon", "seat-cover", "INTERIOR"], ["vyhlopnaya-sistema", "exhaust", "EXHAUST"], ["rulevoe-upravlenie", "steering", "STEERING"], ["aksessuary", "dashcam", "ACCESSORIES"], ["rashodniki", "filter", "CONSUMABLES"], ["avtohimiya", "care", "CHEMICALS"], ["instrumenty", "tools", "TOOLS"]]) {
+    for (const [slug, type] of [
+      ["dvigatel", "ENGINE"],
+      ["tormoza", "BRAKES"],
+      ["podveska", "SUSPENSION"],
+      ["elektrika", "ELECTRICAL"],
+      ["optika", "LIGHTING"],
+      ["transmissiya", "TRANSMISSION"],
+      ["kolesa-i-diski", "WHEELS"],
+      ["ohlazhdenie", "COOLING"],
+      ["kuzov", "BODY"],
+      ["salon", "INTERIOR"],
+      ["vyhlopnaya-sistema", "EXHAUST"],
+      ["rulevoe-upravlenie", "STEERING"],
+      ["aksessuary", "ACCESSORIES"],
+      ["rashodniki", "CONSUMABLES"],
+      ["avtohimiya", "CHEMICALS"],
+      ["instrumenty", "TOOLS"],
+    ]) {
       const key = `part-${slug}-${mobile ? "mobile" : "desktop"}-${theme}`
       const page = await context.newPage(), errors = []
       page.on("pageerror", (error) => errors.push(error.message))
@@ -142,16 +159,18 @@ try {
       await page.locator(`html[data-mantine-color-scheme="${theme}"]`).waitFor()
       check(`${key}: page and semantic title`, response.status() === 200 && await page.locator("h1").count() === 1)
       const heading = page.locator(".part-category__heading")
-      const scene = { ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension", ELECTRICAL: "electrical", LIGHTING: "lighting" }[type]
-      const expectedArt = {
-        suffix: scene ? `/part-${scene}-${mobile ? 960 : 1600}.webp` : `/${kind}-${["INTERIOR", "ACCESSORIES", "CONSUMABLES", "CHEMICALS", "TOOLS"].includes(type) ? 192 : 320}.webp`,
-        fit: scene ? "cover" : "contain",
-      }
+      const expectedArt = `/parts-panorama-v1/${type.toLowerCase()}-${mobile ? 840 : 960}.webp`
       await heading.locator("img").evaluate(img => img.decode())
-      check(`${key}: responsive decorative artwork`, await heading.locator("img").evaluate((img, { suffix, fit }) =>
+      check(`${key}: responsive decorative artwork`, await heading.locator("img").evaluate((img, suffix) =>
         img.complete && img.naturalWidth > 0 && img.currentSrc.endsWith(suffix) && img.alt === ""
-        && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === fit, expectedArt))
-      check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 225))
+        && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === "contain", expectedArt))
+      check(`${key}: full-width panorama and bounded heading`, await heading.evaluate((node, mobile) => {
+        const hero = node.getBoundingClientRect()
+        const art = node.querySelector("img").getBoundingClientRect()
+        const copy = node.querySelector(".part-category__hero-copy").getBoundingClientRect()
+        return Math.abs(art.width - hero.width) < 1 && Math.abs(art.top - hero.top) < 1
+          && hero.height <= (mobile ? 275 : 305) && (mobile ? copy.top >= art.bottom - 1 : Math.abs(art.bottom - hero.bottom) < 1)
+      }, mobile))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
       check(`${key}: all category cards have fitted product artwork`, await page.locator(".part-category__list a").evaluateAll(async (links) => {
@@ -189,9 +208,42 @@ try {
       await cta.press("Enter")
       await page.waitForURL((url) => url.pathname === "/parts-finder" && url.searchParams.get("partType") === type)
       check(`${key}: search action retains type`, new URL(page.url()).searchParams.get("partType") === type)
+      if (type === "ENGINE") {
+        const catalogHero = page.locator('[data-part-scene="overview"] img')
+        await catalogHero.evaluate((img) => img.decode())
+        check(`${key}: search catalog uses its own panorama`, await catalogHero.evaluate((img) => img.naturalWidth > 0 && img.currentSrc.includes("/parts-panorama-v1/overview-")))
+      }
       check(`${key}: no runtime errors`, errors.length === 0)
       await page.close()
     }
+    await context.close()
+  }
+  for (const reducedMotion of ["no-preference", "reduce"]) {
+    const context = await browser.newContext({ viewport: { width: 1560, height: 1000 }, reducedMotion })
+    await context.addInitScript(() => localStorage.setItem("lw-quick-tour-v1", "done"))
+    await context.route("**/*", (route) => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
+    const page = await context.newPage()
+    await page.goto(`${base}/parts-finder/dvigatel`, { waitUntil: "domcontentloaded" })
+    const card = page.getByRole("link", { name: "Турбина", exact: true })
+    const shine = card.locator(".part-category__nav-shine")
+    const visible = () => shine.evaluate((node) => getComputedStyle(node).display !== "none")
+    check(`${reducedMotion}: no shine at rest`, !(await visible()))
+    await card.hover()
+    check(`${reducedMotion}: pointer shine respects motion setting`, await visible() === (reducedMotion === "no-preference"))
+    if (reducedMotion === "no-preference") {
+      check("shine runs once on its own mask", await shine.evaluate((node) => {
+        const animation = getComputedStyle(node, "::after")
+        return getComputedStyle(node).maskImage.includes("engine-6.webp")
+          && animation.animationName === "part-icon-shine" && animation.animationIterationCount === "1"
+      }))
+    }
+    await page.mouse.move(0, 0)
+    check(`${reducedMotion}: leaving the card resets the shine`, !(await visible()))
+    await card.focus()
+    await page.keyboard.press("Tab")
+    await page.keyboard.press("Shift+Tab")
+    check(`${reducedMotion}: keyboard focus and shine`, await card.evaluate((node) => node.matches(":focus-visible"))
+      && await visible() === (reducedMotion === "no-preference"))
     await context.close()
   }
   await writeFile(`${output}/report.json`, JSON.stringify({ checks: checks.length, results: checks, failures: [] }, null, 2))
