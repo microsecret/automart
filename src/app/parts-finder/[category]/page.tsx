@@ -10,7 +10,6 @@ import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 import { partIconSource } from "@/components/parts/part-icon-source"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
-import { IconArrowUpRight } from "@tabler/icons-react"
 
 const partArtwork: Readonly<Record<string, string>> = {
   ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
@@ -205,7 +204,6 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
                     <span id={labelId}>{row.label}</span>
                     {description && <small id={`${labelId}-description`}>{description}</small>}
                   </span>
-                  <IconArrowUpRight size={16} aria-hidden="true" />
                 </Link>
               </li>
             )

@@ -103,6 +103,7 @@
   .catalog-heading--illustrated .catalog-heading__copy h1 { font-size: 23px !important; line-height: 1.2; }
   .catalog-heading--daylight { padding: 0; gap: 9px; }
   .catalog-heading--daylight .catalog-heading__identity {
+    min-height: 126px;
     aspect-ratio: 2.25;
     padding: 14px 16px;
   }
