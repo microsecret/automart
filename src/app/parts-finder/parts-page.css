@@ -753,6 +753,7 @@
 }
 
 .parts-departments__media {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
@@ -775,6 +776,8 @@
 .parts-departments__photo img { object-fit: cover; }
 
 .parts-departments__cutout {
+  position: absolute;
+  inset: 8% 10.5%;
   display: block;
   width: 79%;
   height: 84%;
