@@ -140,6 +140,18 @@ try {
     check(`${label}: payment history fits viewport`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     check(`${label}: no JavaScript runtime errors`, errors.length === 0)
     await page.screenshot({ path: `${output}/promotion-metrics-${label}.png`, fullPage: true })
+    if (mobile) {
+      const verifiedRequests = []
+      await page.route("**/api/payment/check", async (route) => {
+        verifiedRequests.push(route.request().postDataJSON())
+        if (verifiedRequests.length === 1) await route.abort("connectionreset")
+        else await route.fulfill({ json: { status: "activated" } })
+      })
+      await page.goto(`${base}/listings/${listing.id}/promote?payment=success&order=${order.id}`, { waitUntil: "domcontentloaded" })
+      await page.getByText("Оплата прошла, продвижение включено.", { exact: true }).waitFor({ timeout: 15_000 })
+      check("network interruption during payment verification retries the same order", verifiedRequests.length === 2
+        && verifiedRequests.every((body) => body.listingId === listing.id && body.orderId === order.id))
+    }
     await context.close()
   }
   await writeFile(`${output}/report.json`, JSON.stringify({ mode: "isolated database and authenticated dashboard; no provider actions", checks, failures: [] }, null, 2))

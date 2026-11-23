@@ -60,8 +60,9 @@ export default function PromotePage() {
     if (paymentStatus !== "success" || !id) return
 
     let cancelled = false
+    let retryTimer: number | undefined
     const attempt = async (index: number) => {
-      if (cancelled || index > 2) return
+      if (cancelled) return
       setCheckState("checking")
       try {
         const response = await fetch("/api/payment/check", {
@@ -87,16 +88,19 @@ export default function PromotePage() {
           setCheckState(payload.status)
           return
         }
-
-        setCheckState("pending")
-        window.setTimeout(() => void attempt(index + 1), (index + 1) * 4000)
       } catch {
-        if (!cancelled) setCheckState("pending")
+        // A connection failure can recover within the same verification window.
       }
+      if (cancelled) return
+      setCheckState("pending")
+      if (index < 2) retryTimer = window.setTimeout(() => void attempt(index + 1), (index + 1) * 4000)
     }
 
     void attempt(0)
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      window.clearTimeout(retryTimer)
+    }
   }, [paymentStatus, id, orderId, reloadViews])
 
   const handleSelect = (id: string) => {
