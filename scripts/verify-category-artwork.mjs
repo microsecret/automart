@@ -25,7 +25,9 @@ try { await access(executablePath) } catch {
 }
 const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] })
 try {
-  for (const mobile of [false, true].filter((value) => process.env.CATEGORY_AUDIT_DEVICE !== "mobile" || value)) for (const theme of ["light", "dark"]) {
+  const devices = process.env.CATEGORY_AUDIT_SCOPE === "motion" ? []
+    : [false, true].filter((value) => process.env.CATEGORY_AUDIT_DEVICE !== "mobile" || value)
+  for (const mobile of devices) for (const theme of ["light", "dark"]) {
     const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1560, height: 1000 }, isMobile: mobile, hasTouch: mobile, reducedMotion: "reduce" })
     await context.addInitScript((theme) => { localStorage.setItem("automart-color-scheme", theme); localStorage.setItem("lw-quick-tour-v1", "done") }, theme)
     await context.route("**/*", (route) => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
@@ -256,7 +258,8 @@ try {
       if (request.url().includes("/part-motion-v1/")) spriteRequests.push(request.url())
     })
     if (scenario === "mini-app") {
-      await page.goto(`${base}/catalogs?from=telegram`, { waitUntil: "domcontentloaded" })
+      await page.goto(`${base}/catalogs?from=telegram`, { waitUntil: "networkidle" })
+      await page.getByRole("link", { name: "Вернуться в приложение", exact: true }).waitFor()
       await page.getByRole("button", { name: "Каталоги", exact: true }).click()
       await page.locator("#shop-catalog-menu").getByRole("link", { name: "Двигатель", exact: true }).click()
       await page.getByRole("link", { name: "Обзор категории", exact: true }).click()

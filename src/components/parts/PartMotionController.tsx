@@ -128,6 +128,7 @@ export default function PartMotionController() {
     preference.addEventListener("change", availabilityChanged)
     return () => {
       observer.disconnect()
+      observer.takeRecords()
       document.removeEventListener("visibilitychange", availabilityChanged)
       preference.removeEventListener("change", availabilityChanged)
       cancel()
