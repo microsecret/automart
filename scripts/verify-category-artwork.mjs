@@ -135,8 +135,15 @@ try {
       check(`${key}: page and semantic title`, response.status() === 200 && await page.locator("h1").count() === 1)
       const heading = page.locator(".part-category__heading")
       const scene = { ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension", ELECTRICAL: "electrical", LIGHTING: "lighting" }[type]
-      check(`${key}: full decorative artwork`, await heading.locator("img").evaluate((img, expected) => img.complete && img.naturalWidth > 0 && img.src.includes(expected) && img.alt === "" && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === "contain", scene ? `/part-${scene}-1600.webp` : `/${kind}-320.webp`))
-      check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 210))
+      const expectedArt = {
+        suffix: scene ? `/part-${scene}-${mobile ? 960 : 1600}.webp` : `/${kind}-320.webp`,
+        fit: scene ? "cover" : "contain",
+      }
+      await heading.locator("img").evaluate(img => img.decode())
+      check(`${key}: responsive decorative artwork`, await heading.locator("img").evaluate((img, { suffix, fit }) =>
+        img.complete && img.naturalWidth > 0 && img.currentSrc.endsWith(suffix) && img.alt === ""
+        && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === fit, expectedArt))
+      check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 225))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
       if (["ENGINE", "BRAKES", "SUSPENSION", "ELECTRICAL", "LIGHTING"].includes(type)) {
