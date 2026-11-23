@@ -2,10 +2,50 @@
 
 import ProductGroupArtwork from "./ProductGroupArtwork"
 import { useId } from "react"
-import { Box, Group, Text, UnstyledButton } from "@mantine/core"
-import { IconTool } from "@tabler/icons-react"
+import { Box, Group, UnstyledButton } from "@mantine/core"
+import { IconArrowRight, IconCheck, IconTool } from "@tabler/icons-react"
 import { DEPARTMENTS, productGroupsOfDepartment, type DepartmentKey } from "@/lib/product-groups"
 
+const DESCRIPTIONS: Readonly<Record<string, string>> = {
+  battery: "Ёмкость, полярность и пусковой ток",
+  brake_pads: "Для передней и задней оси",
+  brake_discs: "Диаметр и тип диска",
+  oil_filter: "Резьба и номер детали",
+  air_filter: "Форма и размеры",
+  cabin_filter: "Обычные и угольные",
+  fuel_filter: "Тип топлива и соединение",
+  spark_plugs: "Резьба и зазор",
+  shock_absorbers: "Передние и задние стойки",
+  belts: "Длина и число зубьев",
+  engine_oil: "Вязкость и допуск двигателя",
+  transmission_oil: "Для коробок и редукторов",
+  antifreeze: "Допуск и температура замерзания",
+  brake_fluid: "Класс DOT и объём",
+  washer_fluid: "Летние и зимние составы",
+  hydraulic_fluid: "Для усилителя руля и гидросистем",
+  greases: "Для подшипников, шарниров и узлов",
+  other_fluids: "По назначению и объёму",
+  tires: "По размеру и сезону",
+  wheels: "Диаметр, вылет и разболтовка",
+  wiper_blades: "По длине и креплению",
+  bulbs: "Тип цоколя и мощность",
+  dashcams: "Разрешение и число камер",
+  car_mats: "Для салона и багажника",
+  seat_covers: "По материалу и комплекту",
+  chargers: "Для зарядки и запуска авто",
+  safety: "Комплект для автомобиля",
+  roof_racks: "По креплению и нагрузке",
+  compressors: "Давление и производительность",
+  jacks: "Грузоподъёмность и высота",
+  tool_sets: "По комплекту и посадочному размеру",
+  tools: "Для обслуживания и ремонта",
+  chem_engine: "Очистители для двигателя",
+  chem_additives: "Для топлива и технических жидкостей",
+  chem_body: "Мойка и защита кузова",
+  chem_interior: "Уход за тканью, кожей и пластиком",
+  chem_repair: "Для ремонта и защиты от коррозии",
+  autochem: "По назначению и составу",
+}
 
 /**
  * Отделы магазина и товарные группы — как плитки «Аккумуляторы»,
@@ -62,6 +102,8 @@ export default function DepartmentNav({ group, department, onSelect }: {
       <div className="parts-departments__groups" role="tabpanel" id={panelId} aria-labelledby={`${id}-${current}`}>
         {groups.map((item) => {
           const isOn = group === item.key
+          const labelId = `${id}-group-${item.key}`
+          const description = DESCRIPTIONS[item.key]
           return (
             <UnstyledButton
               key={item.key}
@@ -69,10 +111,20 @@ export default function DepartmentNav({ group, department, onSelect }: {
               data-product-group={item.key}
               data-active={isOn || undefined}
               aria-pressed={isOn}
+              aria-labelledby={labelId}
+              aria-describedby={description ? `${labelId}-description` : undefined}
               onClick={() => onSelect({ department: current, group: isOn ? null : item.key })}
             >
-              <span className="parts-departments__icon"><ProductGroupArtwork group={item.key} fallback={<IconTool size={22} stroke={1.6} />} /></span>
-              <Text span size="sm" fw={700} lh={1.25}>{item.label}</Text>
+              <span className="parts-departments__media" aria-hidden="true">
+                <ProductGroupArtwork group={item.key} fallback={<IconTool size={28} stroke={1.6} />} />
+              </span>
+              <span className="parts-departments__caption">
+                <span id={labelId} className="parts-departments__label">{item.label}</span>
+                {description && <span id={`${labelId}-description`} className="parts-departments__description">{description}</span>}
+                <span className="parts-departments__action" aria-hidden="true">
+                  {isOn ? <IconCheck size={16} stroke={1.8} /> : <IconArrowRight size={16} stroke={1.8} />}
+                </span>
+              </span>
             </UnstyledButton>
           )
         })}

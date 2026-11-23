@@ -1,15 +1,8 @@
-/* Панель направлений каталога.
-
-   Образец — «Торговые площадки по отраслям» у RawMart: тёмная шапка с
-   подписью капсом, под ней плитки на цветной подложке с крупным
-   полупрозрачным значком. Панель читается одним предметом — навигацией,
-   а не ещё одной лентой карточек среди карточек объявлений. */
 .showcase {
-  margin-block: 0;
   overflow: hidden;
   border: 1px solid var(--market-line);
   border-radius: var(--radius-lg);
-  background: #0b1426;
+  background: var(--lw-scene-surface);
 }
 
 .head {
@@ -18,163 +11,130 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgb(227 181 145 / 28%);
 }
 
 .title {
   margin: 0;
-  color: #e6ecf5;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  color: var(--lw-scene-ink);
+  font-size: var(--text-sm);
+  font-weight: 750;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .all {
-  color: #8fb3ff;
+  color: #efc6a6;
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: 650;
   text-decoration: none;
   white-space: nowrap;
 }
 
-.all:hover {
-  color: #ffffff;
-}
+.all:hover { text-decoration: underline; }
 
 .all:focus-visible,
 .card:focus-visible {
-  outline: 2px solid #8fb3ff;
-  outline-offset: -2px;
+  outline: 3px solid #f0c7a5;
+  outline-offset: -3px;
 }
 
-/* Сетка 4×2 без дыр: первая плитка — две клетки по высоте. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(104px, auto);
+  grid-template-columns: minmax(0, 1.22fr) repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(150px, auto);
+  gap: 2px;
 }
 
 .card {
-  --tone-a: #1e3a8a;
-  --tone-b: #2563eb;
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  justify-content: flex-end;
+  gap: 4px;
   min-width: 0;
   overflow: hidden;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, var(--tone-a) 0%, var(--tone-b) 100%);
-  color: #ffffff;
+  padding: 14px 28px 14px 14px;
+  background: #0d383c;
+  color: var(--lw-scene-ink);
   text-decoration: none;
-  isolation: isolate;
-  /* Внутренние линии сетки — тонкой тёмной рамкой, а не зазором: плитки
-     сходятся в одно полотно, как у образца. */
-  box-shadow: inset -1px -1px 0 rgba(4, 10, 24, 0.35);
-  transition: filter var(--ease-base) var(--ease-out);
 }
 
-.card:first-child {
-  grid-row: span 2;
-  justify-content: flex-end;
-}
+.card:first-child { grid-row: span 2; }
 
-.card[data-tone="blue"]   { --tone-a: #13306e; --tone-b: #2563eb; }
-.card[data-tone="grape"]  { --tone-a: #3b1a6b; --tone-b: #7c3aed; }
-.card[data-tone="indigo"] { --tone-a: #1f2a5c; --tone-b: #4f46e5; }
-.card[data-tone="orange"] { --tone-a: #6b2a0c; --tone-b: #d9480f; }
-.card[data-tone="cyan"]   { --tone-a: #0b3b4f; --tone-b: #0e7490; }
-.card[data-tone="teal"]   { --tone-a: #0b3d33; --tone-b: #0f766e; }
-.card[data-tone="red"]    { --tone-a: #5c1419; --tone-b: #c92a2a; }
-
-.watermark {
+.picture,
+.picture img {
   position: absolute;
-  right: -10px;
-  bottom: -14px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.picture { z-index: -2; }
+
+.picture img {
+  object-fit: cover;
+  object-position: right center;
+  transition: transform 260ms ease-out;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   z-index: -1;
-  color: rgba(255, 255, 255, 0.12);
-  transition: transform var(--ease-slow) var(--ease-out), color var(--ease-slow) var(--ease-out);
-}
-
-.card:first-child .watermark {
-  top: 18px;
-  right: -18px;
-  bottom: auto;
-  width: 180px;
-  height: 180px;
-}
-
-.icon {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-bottom: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(0deg, #071f23 0%, rgb(7 31 35 / 90%) 27%, rgb(7 31 35 / 37%) 65%, transparent 93%);
 }
 
 .label {
   font-size: var(--text-md);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.01em;
-  line-height: 1.2;
+  line-height: 1.17;
+  text-wrap: balance;
+  text-shadow: 0 1px 4px rgb(0 10 12 / 64%);
 }
 
-.card:first-child .label {
-  font-size: var(--text-xl);
-}
+.card:first-child .label { font-size: var(--text-xl); }
 
-.hint {
-  color: rgba(255, 255, 255, 0.72);
+.hint,
+.meta {
   font-size: var(--text-xs);
-  line-height: 1.35;
+  line-height: 1.32;
 }
+
+.hint { color: #e0eeeb; }
 
 .meta {
-  margin-top: auto;
-  padding-top: 8px;
-  color: #ffffff;
-  font-size: var(--text-xs);
-  font-weight: 700;
+  min-height: 1.32em;
+  color: #efc6a6;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 
-.meta[data-empty] {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
+.arrow {
+  position: absolute;
+  inset-inline-end: 10px;
+  bottom: 15px;
+  color: #efc6a6;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .card:hover {
-    filter: brightness(1.12) saturate(1.05);
-  }
-
-  .card:hover .watermark {
-    color: rgba(255, 255, 255, 0.2);
-    transform: translate(-4px, -4px) rotate(-6deg);
-  }
+  .card:hover .picture img { transform: scale(1.035); }
 }
 
 @media (max-width: 62em) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(96px, auto);
-  }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card:first-child { grid-column: span 2; grid-row: auto; }
+}
 
-  .card:first-child {
-    grid-column: span 2;
-    grid-row: auto;
-    min-height: 120px;
-  }
+@media (max-width: 26em) {
+  .card { padding-inline: 10px 23px; }
+  .label { font-size: 15px; }
+  .arrow { inset-inline-end: 5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card,
-  .watermark {
-    transition: none;
-  }
+  .picture img { transition: none; }
+  .card:hover .picture img { transform: none; }
 }

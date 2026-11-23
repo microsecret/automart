@@ -422,7 +422,7 @@ export default function HomePage(p: HomePageProps = {}) {
   /* Класс home-page-stack — опора для правила ширины в globals.css: на
      главной ограничитель снят с колонки контента ради героя во всю
      ширину, и ширину держат вместо него прямые дети этой стопки. */
-  const daylightScene = p.categorySlug && ["cars", "trucks", "moto"].includes(p.categorySlug)
+  const daylightScene = p.categorySlug && ["cars", "trucks", "moto", "special", "water", "air"].includes(p.categorySlug)
     ? p.categorySlug : null
 
   return (

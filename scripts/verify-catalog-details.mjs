@@ -21,7 +21,6 @@ try { await access(executablePath) } catch {
 const browser = await chromium.launch({ executablePath, args: ["--no-sandbox", "--disable-dev-shm-usage"] })
 try {
   for (const [device, viewport] of [["desktop", { width: 1560, height: 1000 }], ["tablet", { width: 820, height: 1100 }], ["mobile", { width: 390, height: 844 }]]) for (const theme of ["light", "dark"]) {
-    const mobile = device === "mobile"
     const context = await browser.newContext({ viewport, reducedMotion: "reduce" })
     await context.addInitScript(value => { localStorage.setItem("automart-color-scheme", value); localStorage.setItem("lw-quick-tour-v1", "done") }, theme)
     await context.route("**/*", route => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
@@ -39,15 +38,24 @@ try {
       check(name + ": all groups illustrated", await groups.count() > 0 && await groups.locator("img").count() === await groups.count())
       for (const key of await groups.evaluateAll(els => els.map(el => el.dataset.productGroup))) keys.add(key)
       await groups.locator("img").evaluateAll(async images => { for (const img of images) img.loading = "eager"; await Promise.all(images.map(img => img.decode())) })
-      check(name + ": transparent art decoded", await groups.locator("img").evaluateAll(images => images.every(img => img.naturalWidth > 0 && img.alt === "")))
-      check(name + ": same frame, no stretching or clipping", await groups.locator("img").evaluateAll(images => images.every(img => {
-        const box = img.getBoundingClientRect(), parent = img.parentElement.getBoundingClientRect(), style = getComputedStyle(img)
-        return box.width === 52 && box.height === 52 && style.objectFit === "contain" && box.left >= parent.left && box.right <= parent.right + 1 && box.top >= parent.top && box.bottom <= parent.bottom + 1
+      check(name + ": artwork decoded", await groups.locator("img").evaluateAll(images => images.every(img => img.naturalWidth > 0 && img.alt === "")))
+      check(name + ": fixed media frames keep art inside the tile", await groups.locator("img").evaluateAll(images => images.every(img => {
+        const box = img.getBoundingClientRect(), frame = img.closest(".parts-departments__media").getBoundingClientRect()
+        const mode = img.closest("picture") ? "cover" : "contain"
+        return getComputedStyle(img).objectFit === mode && box.left >= frame.left - 1 && box.right <= frame.right + 1
+          && box.top >= frame.top - 1 && box.bottom <= frame.bottom + 1 && Math.abs(frame.width / frame.height - 1.6) < 0.04
       })))
-      check(name + ": compact tiles and aligned labels", await groups.evaluateAll(els => els.every(el => {
-        const box = el.getBoundingClientRect(), text = el.querySelector(".mantine-Text-root").getBoundingClientRect(), img = el.querySelector("img").getBoundingClientRect()
-        return box.height <= 112 && text.left >= img.right && text.right <= box.right && text.bottom <= box.bottom
+      check(name + ": labels and descriptions beneath artwork", await groups.evaluateAll(els => els.every(el => {
+        const box = el.getBoundingClientRect()
+        const text = el.querySelector(".parts-departments__caption").getBoundingClientRect()
+        const frame = el.querySelector(".parts-departments__media").getBoundingClientRect()
+        return text.top >= frame.bottom - 1 && text.right <= box.right + 1 && text.bottom <= box.bottom + 1
+          && !!document.getElementById(el.getAttribute("aria-describedby"))?.textContent.trim()
       })))
+      if (label === "Запчасти") {
+        check(name + ": ten distinct product photos", await groups.locator("img").evaluateAll(images =>
+          images.length === 10 && new Set(images.map(img => img.currentSrc)).size === 10 && images.every(img => img.currentSrc.includes("/product-scenes-v2/"))))
+      }
       check(name + ": no viewport overflow", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
       await page.screenshot({ path: `${output}/dept-${tabs.indexOf(label)}-${device}-${theme}.png` })
     }
@@ -86,6 +94,34 @@ try {
     await page.getByRole("button", { name: "Домкраты", exact: true }).click()
     await page.waitForURL(/group=jacks/)
     check(`catalog ${device} ${theme}: artwork preserves group navigation`, page.url().includes("group=jacks"))
+    if (device !== "tablet" && theme === "light") {
+      for (const category of ["dvigatel", "tormoza", "podveska", "elektrika", "optika"]) {
+        const response = await page.goto(base + "/parts-finder/" + category, { waitUntil: "domcontentloaded" })
+        const hero = page.locator("[data-part-scene]")
+        const queryLinks = page.locator(".part-category__list--queries a")
+        const related = page.locator(".part-category__list--navigation a")
+        await page.locator(".part-category img").evaluateAll(async images => {
+          for (const image of images) image.loading = "eager"
+          await Promise.all(images.map(image => image.decode()))
+        })
+        check(`${category} ${device}: scene and illustrated search links`, response.status() === 200 && await hero.locator("img").count() === 1
+          && await queryLinks.count() > 0 && await queryLinks.evaluateAll(links => links.every(link => link.querySelector("img")?.naturalWidth > 0
+            && new URL(link.href).searchParams.has("partType") && new URL(link.href).searchParams.has("q"))))
+        check(`${category} ${device}: related category descriptions and no overflow`, await related.count() === 15
+          && await related.evaluateAll(links => links.every(link => link.querySelector("img")?.naturalWidth > 0 && link.querySelector("small")?.textContent.trim()))
+          && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
+        await page.screenshot({ path: `${output}/part-${category}-${device}.png` })
+      }
+      await page.goto(base + "/", { waitUntil: "domcontentloaded" })
+      const directions = page.locator("[data-direction]")
+      await directions.first().scrollIntoViewIfNeeded()
+      await directions.locator("img").evaluateAll(async images => {
+        for (const image of images) image.loading = "eager"
+        await Promise.all(images.map(image => image.decode()))
+      })
+      check(`${device}: seven home catalog directions display distinct photos`, await directions.count() === 7
+        && await directions.locator("img").evaluateAll(images => new Set(images.map(img => img.currentSrc)).size === 7 && images.every(img => img.naturalWidth > 0)))
+    }
     for (const [key, title] of [["sell", "Как продать авто"], ["safety", "Безопасность"], ["rules", "Правила площадки"], ["support", "Поддержка LeWheel"]]) {
       const name = `help-${key}-${device}-${theme}`
       const response = await page.goto(base + "/help/" + key, { waitUntil: "networkidle" })

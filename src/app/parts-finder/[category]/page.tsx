@@ -19,6 +19,28 @@ const partArtwork: Readonly<Record<string, string>> = {
   CONSUMABLES: "consumables", CHEMICALS: "chemicals", TOOLS: "tools",
 }
 
+const scenicParts = new Set(["engine", "brakes", "suspension", "electrical", "lighting"])
+const queryPhotos: Readonly<Record<string, string>> = {
+  "ГБЦ": "/images/ui/part-query-scenes-v2/cylinder-head-256.webp",
+  "Поршневая группа": "/images/ui/part-query-scenes-v2/pistons-256.webp",
+  "Коленвал": "/images/ui/part-query-scenes-v2/crankshaft-256.webp",
+  "Турбина": "/images/ui/catalog-directions-v2/parts-384.webp",
+  "Суппорты": "/images/ui/part-query-scenes-v2/brake-caliper-256.webp",
+  "Рычаги подвески": "/images/ui/part-query-scenes-v2/control-arm-256.webp",
+  "Генератор": "/images/ui/part-query-scenes-v2/alternator-256.webp",
+  "Задний фонарь": "/images/ui/part-query-scenes-v2/rear-light-256.webp",
+  "Колодки тормозные": "/images/ui/product-scenes-v2/brake-pads-384.webp",
+  "Диски тормозные": "/images/ui/product-scenes-v2/brake-discs-384.webp",
+  "Амортизаторы": "/images/ui/product-scenes-v2/shock-absorbers-384.webp",
+  "Аккумулятор": "/images/ui/product-scenes-v2/battery-384.webp",
+  "Свечи зажигания": "/images/ui/product-scenes-v2/spark-plugs-384.webp",
+  "Ремень ГРМ": "/images/ui/product-scenes-v2/belts-384.webp",
+  "Фильтр масляный": "/images/ui/product-scenes-v2/oil-filter-384.webp",
+  "Фильтр воздушный": "/images/ui/product-scenes-v2/air-filter-384.webp",
+  "Фильтр салонный": "/images/ui/product-scenes-v2/cabin-filter-384.webp",
+  "Фильтр топливный": "/images/ui/product-scenes-v2/fuel-filter-384.webp",
+}
+
 /**
  * Страница категории запчастей.
  *
@@ -107,7 +129,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
   const lower = summary.label.toLocaleLowerCase("ru-RU")
   const others = partCategoriesWithPages().filter((row) => row.slug !== summary.slug)
   const artworkKind = partArtwork[summary.partType]
-  const scenicKind = ["engine", "brakes", "suspension", "electrical", "lighting"].includes(artworkKind) ? artworkKind : null
+  const scenicKind = scenicParts.has(artworkKind) ? artworkKind : null
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
      человек видит, что попадёт в раздел запчастей, а не на случайную
@@ -136,9 +158,13 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
       <header data-part-scene={scenicKind || undefined} className={scenicKind ? "part-category__heading part-category__heading--scene" : artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
         {scenicKind ? <picture>
           <source media="(max-width: 600px)" srcSet={`/images/ui/scenic-v1/part-${scenicKind}-960.webp`} />
-          <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true" unoptimized className="part-category__scene" />
+          <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true"
+            unoptimized loading="eager" fetchPriority="high" className="part-category__scene" />
         </picture> : artworkKind && <PartCategoryArtwork kind={artworkKind} />}
-        <h1 className="part-category__title">{summary.label}: новые и б/у запчасти</h1>
+        <div className="part-category__hero-copy">
+          <h1 className="part-category__title">{summary.label}</h1>
+          <p>Новые и б/у запчасти</p>
+        </div>
       </header>
 
       <p className="part-category__lead">
@@ -159,12 +185,17 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
           {/* Подкатегории — и содержимое для человека, и те слова, которыми
               он ищет: «ГБЦ», «Турбина», «Ремень ГРМ» набирают в поиске
               чаще, чем «двигатель». */}
-          <ul className="part-category__list">
+          <ul className="part-category__list part-category__list--queries">
             {summary.subcategories.map((name) => (
               <li key={name}>
                 <Link href={`/parts-finder?partType=${summary.partType}&q=${encodeURIComponent(name)}`}>
+                  <span className="part-category__nav-art" aria-hidden="true">
+                    {queryPhotos[name]
+                      ? <Image src={queryPhotos[name]} alt="" width={64} height={48} className="part-category__nav-photo" unoptimized loading="lazy" />
+                      : <PartCategoryArtwork kind={artworkKind} compact />}
+                  </span>
+                  <span className="part-category__nav-copy">{name}</span>
                   <IconSearch size={17} aria-hidden="true" />
-                  {name}
                 </Link>
               </li>
             ))}
@@ -175,15 +206,27 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
       <nav aria-labelledby="part-category-nav">
         <h2 id="part-category-nav" className="part-category__subtitle">Другие категории запчастей</h2>
         <ul className="part-category__list part-category__list--navigation">
-          {others.map((row) => (
-            <li key={row.slug}>
-              <Link href={`/parts-finder/${row.slug}`}>
-                {partArtwork[row.partType] && <PartCategoryArtwork kind={partArtwork[row.partType]} compact />}
-                <span>{row.label}</span>
-                <IconArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-            </li>
-          ))}
+          {others.map((row) => {
+            const labelId = `part-category-${row.slug}-label`
+            const description = PART_SUBCATEGORIES[row.partType]?.slice(0, 2).join(" · ")
+            const artwork = partArtwork[row.partType]
+            return (
+              <li key={row.slug}>
+                <Link href={`/parts-finder/${row.slug}`} aria-labelledby={labelId} aria-describedby={description ? `${labelId}-description` : undefined}>
+                  <span className="part-category__nav-art" aria-hidden="true">
+                    {scenicParts.has(artwork)
+                      ? <Image src={`/images/ui/part-query-scenes-v2/${artwork}-overview-256.webp`} alt="" width={64} height={48} className="part-category__nav-photo" unoptimized loading="lazy" />
+                      : <PartCategoryArtwork kind={artwork} compact />}
+                  </span>
+                  <span className="part-category__nav-copy">
+                    <span id={labelId}>{row.label}</span>
+                    {description && <small id={`${labelId}-description`}>{description}</small>}
+                  </span>
+                  <IconArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </nav>
 
