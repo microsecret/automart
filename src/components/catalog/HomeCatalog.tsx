@@ -614,11 +614,12 @@ export default function HomePage(p: HomePageProps = {}) {
 
       <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${hasCategoryArtwork ? " catalog-heading--illustrated" : ""}${daylightScene ? " catalog-heading--daylight" : ""}`}>
         <Group gap="md" wrap="nowrap" className="catalog-heading__identity">
-          {daylightScene ? <picture className="catalog-heading__picture"
-            data-full-frame={["special", "water", "air"].includes(daylightScene) || undefined}>
-            <source media="(max-width: 46em)" srcSet={`/images/ui/catalog-daylight-v1/${daylightScene}-880.webp`} />
-            <NextImage src={`/images/ui/catalog-daylight-v1/${daylightScene}-1760.webp`}
-              width={1760} height={880} alt="" aria-hidden="true" unoptimized loading="eager" fetchPriority="high" />
+          {daylightScene ? <picture className="catalog-heading__picture">
+            <source media="(max-width: 46em)" srcSet={`/images/ui/transport-panorama-v1/${daylightScene}-840.webp`} />
+            <source sizes="(min-width: 90em) calc(100vw - 36rem), (min-width: 62em) calc(100vw - 18rem), 100vw"
+              srcSet={`/images/ui/transport-panorama-v1/${daylightScene}-1320.webp 1320w, /images/ui/transport-panorama-v1/${daylightScene}-2080.webp 2080w`} />
+            <NextImage src={`/images/ui/transport-panorama-v1/${daylightScene}-2080.webp`}
+              width={2080} height={693} alt="" aria-hidden="true" unoptimized loading="eager" fetchPriority="high" />
           </picture> : hasCategoryArtwork && <NextImage
             src={`/images/ui/category-v1/${p.categorySlug}-320.webp`}
             width={144} height={96} alt="" aria-hidden="true" unoptimized

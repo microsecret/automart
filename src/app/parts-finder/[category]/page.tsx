@@ -7,6 +7,7 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
+import { partIconSource } from "@/components/parts/part-icon-source"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
 import { IconArrowUpRight } from "@tabler/icons-react"
@@ -20,25 +21,16 @@ const partArtwork: Readonly<Record<string, string>> = {
 }
 
 const scenicParts = new Set(["engine", "brakes", "suspension", "electrical", "lighting"])
-const queryPhotos: Readonly<Record<string, string>> = {
-  "ГБЦ": "/images/ui/part-query-scenes-v2/cylinder-head-256.webp",
-  "Поршневая группа": "/images/ui/part-query-scenes-v2/pistons-256.webp",
-  "Коленвал": "/images/ui/part-query-scenes-v2/crankshaft-256.webp",
-  "Турбина": "/images/ui/catalog-directions-v2/parts-384.webp",
-  "Суппорты": "/images/ui/part-query-scenes-v2/brake-caliper-256.webp",
-  "Рычаги подвески": "/images/ui/part-query-scenes-v2/control-arm-256.webp",
-  "Генератор": "/images/ui/part-query-scenes-v2/alternator-256.webp",
-  "Задний фонарь": "/images/ui/part-query-scenes-v2/rear-light-256.webp",
-  "Колодки тормозные": "/images/ui/product-scenes-v2/brake-pads-384.webp",
-  "Диски тормозные": "/images/ui/product-scenes-v2/brake-discs-384.webp",
-  "Амортизаторы": "/images/ui/product-scenes-v2/shock-absorbers-384.webp",
-  "Аккумулятор": "/images/ui/product-scenes-v2/battery-384.webp",
-  "Свечи зажигания": "/images/ui/product-scenes-v2/spark-plugs-384.webp",
-  "Ремень ГРМ": "/images/ui/product-scenes-v2/belts-384.webp",
-  "Фильтр масляный": "/images/ui/product-scenes-v2/oil-filter-384.webp",
-  "Фильтр воздушный": "/images/ui/product-scenes-v2/air-filter-384.webp",
-  "Фильтр салонный": "/images/ui/product-scenes-v2/cabin-filter-384.webp",
-  "Фильтр топливный": "/images/ui/product-scenes-v2/fuel-filter-384.webp",
+
+function PartNavigationIcon({ kind, label }: { kind: string; label?: string }) {
+  const src = partIconSource(kind, label)
+  return (
+    <span className="part-category__nav-art" aria-hidden="true">
+      {src
+        ? <Image src={src} alt="" width={144} height={144} unoptimized loading="lazy" draggable={false} />
+        : <PartCategoryArtwork kind={kind} compact />}
+    </span>
+  )
 }
 
 /**
@@ -189,11 +181,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
             {summary.subcategories.map((name) => (
               <li key={name}>
                 <Link href={`/parts-finder?partType=${summary.partType}&q=${encodeURIComponent(name)}`}>
-                  <span className="part-category__nav-art" aria-hidden="true">
-                    {queryPhotos[name]
-                      ? <Image src={queryPhotos[name]} alt="" width={64} height={48} className="part-category__nav-photo" unoptimized loading="lazy" />
-                      : <PartCategoryArtwork kind={artworkKind} compact />}
-                  </span>
+                  <PartNavigationIcon kind={artworkKind} label={name} />
                   <span className="part-category__nav-copy">{name}</span>
                 </Link>
               </li>
@@ -212,11 +200,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
             return (
               <li key={row.slug}>
                 <Link href={`/parts-finder/${row.slug}`} aria-labelledby={labelId} aria-describedby={description ? `${labelId}-description` : undefined}>
-                  <span className="part-category__nav-art" aria-hidden="true">
-                    {scenicParts.has(artwork)
-                      ? <Image src={`/images/ui/part-query-scenes-v2/${artwork}-overview-256.webp`} alt="" width={64} height={48} className="part-category__nav-photo" unoptimized loading="lazy" />
-                      : <PartCategoryArtwork kind={artwork} compact />}
-                  </span>
+                  <PartNavigationIcon kind={artwork} />
                   <span className="part-category__nav-copy">
                     <span id={labelId}>{row.label}</span>
                     {description && <small id={`${labelId}-description`}>{description}</small>}

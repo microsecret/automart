@@ -35,3 +35,8 @@ are in `public/images/ui/catalog-daylight-v1/`.
 
 The browser audits validate decoded artwork, proportional media frames,
 accessible names, original filter and link targets, and mobile overflow.
+## Transport panorama and part icon follow-up
+
+- Built-in ImageGen transport brief. Full-bleed panoramic editorial daylight photography, a continuous photographed setting across the left third for the title, a large subject center-right, enough margin to show the complete silhouette, teal, copper and stone. Subjects are a sedan and crossover at a glass pavilion, an adventure motorcycle at a mountain overlook, a truck and van at a freight terminal, an excavator in a gravel yard, a cabin boat on a lake, and a propeller plane on a runway.
+- Built-in ImageGen part brief. Each category is a row-major sprite atlas of isolated three-dimensional automotive parts on transparent backgrounds. Center each part in its own cell with a clear gutter, consistent lighting and scale, using teal, brushed metal and copper. The order and search labels are in `src/components/parts/part-icon-source.ts`. Rim sizes share a rim icon.
+- Exported panoramas to 840, 1320 and 2080px WebP in `public/images/ui/transport-panorama-v1/`. Exported 144px translucent card icons to `public/images/ui/part-icons-v1/`. Related category cards reuse representative part icons.

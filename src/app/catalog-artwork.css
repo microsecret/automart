@@ -32,8 +32,9 @@
   position: relative;
   isolation: isolate;
   align-items: flex-end;
-  min-height: clamp(128px, 11vw, 176px);
-  padding: 18px clamp(16px, 3vw, 34px) 24px;
+  min-height: 152px;
+  aspect-ratio: 3.5;
+  padding: clamp(18px, 2.2vw, 32px) clamp(18px, 3vw, 40px);
   overflow: hidden;
   border-radius: 12px;
   background: var(--lw-scene-surface);
@@ -45,39 +46,33 @@
   pointer-events: none;
 }
 .catalog-heading__picture {
-  left: 22%;
   z-index: -2;
 }
 .catalog-heading__picture img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: right 56%;
-}
-.catalog-heading__picture[data-full-frame] {
-  left: auto;
-  width: auto;
-  max-width: 86%;
-  aspect-ratio: 2 / 1;
-}
-.catalog-heading__picture[data-full-frame] img {
-  object-fit: contain;
-  object-position: right center;
-}
-.catalog-heading__picture[data-full-frame]::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: linear-gradient(90deg, var(--lw-scene-surface), transparent 25%);
+  object-position: center 32%;
 }
 .catalog-heading--daylight .catalog-heading__identity::after {
   z-index: -1;
   content: "";
-  background: linear-gradient(90deg, var(--lw-scene-surface) 20%, rgb(5 43 49 / 93%) 32%, rgb(5 43 49 / 37%) 53%, transparent 76%);
+  background:
+    linear-gradient(68deg, rgb(6 33 39 / 94%) 0%, rgb(6 33 39 / 68%) 24%, transparent 58%),
+    linear-gradient(0deg, rgb(4 24 31 / 45%), transparent 59%);
 }
 .catalog-heading--daylight .catalog-heading__copy {
-  max-width: min(37ch, 60%);
-  text-shadow: 0 2px 8px rgb(0 16 20 / 56%);
+  max-width: min(44ch, 80%);
+  text-shadow: 0 2px 9px rgb(0 16 20 / 75%);
+}
+.catalog-heading--daylight .catalog-heading__copy h1 {
+  font-size: clamp(25px, 2.8vw, 42px) !important;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.catalog-heading--daylight .catalog-heading__copy [aria-live] {
+  color: var(--lw-scene-ink) !important;
 }
 .catalog-heading--daylight .catalog-heading__controls {
   justify-self: end;
@@ -107,11 +102,13 @@
   .catalog-heading__artwork { flex-basis: 90px; width: 90px; height: 66px; }
   .catalog-heading--illustrated .catalog-heading__copy h1 { font-size: 23px !important; line-height: 1.2; }
   .catalog-heading--daylight { padding: 0; gap: 9px; }
-  .catalog-heading__picture { left: 14%; }
-  .catalog-heading__picture[data-full-frame] { left: auto; }
-  .catalog-heading--daylight .catalog-heading__identity { padding-bottom: 16px; }
-  .catalog-heading--daylight .catalog-heading__identity::after {
-    background: linear-gradient(90deg, var(--lw-scene-surface), rgb(5 43 49 / 91%) 33%, rgb(5 43 49 / 30%) 68%, transparent);
+  .catalog-heading--daylight .catalog-heading__identity {
+    aspect-ratio: 2.25;
+    padding: 14px 16px;
   }
+  .catalog-heading--daylight .catalog-heading__identity::after {
+    background: linear-gradient(0deg, rgb(6 33 39 / 95%), rgb(6 33 39 / 73%) 26%, transparent 70%);
+  }
+  .catalog-heading--daylight .catalog-heading__copy { max-width: 100%; }
   .catalog-heading--daylight .catalog-heading__controls { justify-self: start; justify-content: flex-start; }
 }

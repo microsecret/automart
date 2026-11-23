@@ -53,17 +53,20 @@ try {
       check(`${key}: single semantic heading`, await page.locator("h1").count() === 1)
       const daylight = category !== "parts"
       const selector = daylight ? ".catalog-heading__picture img" : ".catalog-heading__artwork"
-      const width = daylight ? mobile ? 880 : 1760 : 320
+      const width = daylight ? mobile ? 840 : 1320 : 320
       check(`${key}: artwork loaded with correct category`, await page.locator(selector).evaluate((image, suffix) => image.complete && image.naturalWidth > 0 && image.currentSrc.endsWith(suffix) && image.alt === "" && image.getAttribute("aria-hidden") === "true", `/${category}-${width}.webp`))
-      if (["special", "water", "air"].includes(category)) {
-        check(`${key}: entire vehicle photograph fits the banner`, await page.locator(selector).evaluate((image) => {
+      if (daylight) {
+        check(`${key}: panorama covers the complete banner`, await page.locator(selector).evaluate((image) => {
           const bounds = image.getBoundingClientRect()
-          return getComputedStyle(image).objectFit === "contain" && bounds.width > 180 && bounds.height > 100
-            && image.naturalWidth === 2 * image.naturalHeight
+          const hero = image.closest(".catalog-heading__identity").getBoundingClientRect()
+          const ratio = image.naturalWidth / image.naturalHeight
+          return getComputedStyle(image).objectFit === "cover" && ratio >= 2.2 && ratio <= 3.1
+            && Math.abs(bounds.left - hero.left) < 1 && Math.abs(bounds.right - hero.right) < 1
+            && Math.abs(bounds.top - hero.top) < 1 && Math.abs(bounds.bottom - hero.bottom) < 1
         }))
       }
       check(`${key}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-      check(`${key}: compact header`, await page.locator(".catalog-heading").evaluate((node) => node.getBoundingClientRect().height <= 240))
+      check(`${key}: bounded header`, await page.locator(".catalog-heading").evaluate((node, limit) => node.getBoundingClientRect().height <= limit, daylight && !mobile ? 360 : 240))
       check(`${key}: enamel detail actions and original destinations`, await page.locator(".lw-detail-action").evaluateAll((nodes) => nodes.length === 4 && nodes.every((node) => getComputedStyle(node).backgroundImage.includes("gradient") && /\/listings\/(vehicle|part)\/audit-/.test(node.getAttribute("href")))))
       const cards = page.locator(".listing-card")
       await cards.nth(1).locator('[data-empty-media="true"]').first().waitFor()
@@ -126,7 +129,7 @@ try {
       await page.screenshot({ path: `${output}/${key}.png` })
       await page.close()
     }
-    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"], ["transmissiya", "transmission", "TRANSMISSION"], ["kolesa-i-diski", "wheels", "WHEELS"], ["ohlazhdenie", "cooling", "COOLING"]]) {
+    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"], ["transmissiya", "transmission", "TRANSMISSION"], ["kolesa-i-diski", "wheels", "WHEELS"], ["ohlazhdenie", "cooling", "COOLING"], ["kuzov", "body", "BODY"], ["salon", "seat-cover", "INTERIOR"], ["vyhlopnaya-sistema", "exhaust", "EXHAUST"], ["rulevoe-upravlenie", "steering", "STEERING"], ["aksessuary", "dashcam", "ACCESSORIES"], ["rashodniki", "filter", "CONSUMABLES"], ["avtohimiya", "care", "CHEMICALS"], ["instrumenty", "tools", "TOOLS"]]) {
       const key = `part-${slug}-${mobile ? "mobile" : "desktop"}-${theme}`
       const page = await context.newPage(), errors = []
       page.on("pageerror", (error) => errors.push(error.message))
@@ -136,7 +139,7 @@ try {
       const heading = page.locator(".part-category__heading")
       const scene = { ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension", ELECTRICAL: "electrical", LIGHTING: "lighting" }[type]
       const expectedArt = {
-        suffix: scene ? `/part-${scene}-${mobile ? 960 : 1600}.webp` : `/${kind}-320.webp`,
+        suffix: scene ? `/part-${scene}-${mobile ? 960 : 1600}.webp` : `/${kind}-${["INTERIOR", "ACCESSORIES", "CONSUMABLES", "CHEMICALS", "TOOLS"].includes(type) ? 192 : 320}.webp`,
         fit: scene ? "cover" : "contain",
       }
       await heading.locator("img").evaluate(img => img.decode())
@@ -146,6 +149,15 @@ try {
       check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 225))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
+      check(`${key}: all category cards have fitted product artwork`, await page.locator(".part-category__list a").evaluateAll(async (links) => {
+        const icons = links.map((link) => link.querySelector(".part-category__nav-art img"))
+        if (icons.length < 16 || icons.some((icon) => !icon || icon.loading !== "lazy")) return false
+        for (const icon of icons) icon.loading = "eager"
+        await Promise.all(icons.map((icon) => icon.decode()))
+        return icons.every((icon) => icon.currentSrc.includes("/part-icons-v1/") && icon.naturalWidth === 144
+          && icon.alt === "" && getComputedStyle(icon).objectFit === "contain"
+          && icon.closest('[aria-hidden="true"]') !== null)
+      }))
       const cardLabels = page.locator(".part-category__nav-copy")
       check(`${key}: card text stays inside its column`, await cardLabels.evaluateAll((labels) => {
         return labels.length > 0 && labels.every((label) => {
