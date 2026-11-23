@@ -11,6 +11,7 @@ import { PART_SUBCATEGORIES, PART_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { parseImages } from "@/lib/format"
 import PartWorkshopBanner from "@/components/parts/PartWorkshopBanner"
+import { partCategorySlug } from "@/lib/part-category-slug"
 import { fetchJson } from "@/lib/api-client"
 import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, productGroupsOfDepartment, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { articleHref, looksLikeArticle } from "@/lib/article-number"
@@ -166,6 +167,7 @@ function PartsContent() {
   const searching = Boolean(params.get("q") || make || partType || group)
   const title = group?.label ?? (partType ? PART_TYPES.find((item) => item.value === partType)?.label : null) ?? (params.get("q") ? `Поиск: «${params.get("q")}»` : "Запчасти и автотовары")
   const departmentLabel = department ? DEPARTMENTS.find((item) => item.key === department)?.label : null
+  const categorySlug = partType && !group ? partCategorySlug(partType) : null
 
   const filters = (
     <div className={styles.filters}>
@@ -267,6 +269,7 @@ function PartsContent() {
           </>
         )}
         {group && <><span aria-hidden="true">›</span><span aria-current="page">{group.label}</span></>}
+        {categorySlug && <><span aria-hidden="true">›</span><Link href={`/parts-finder/${categorySlug}`}>Обзор категории</Link></>}
       </nav>
 
       <PartWorkshopBanner scene="overview" title={title}>

@@ -8,15 +8,24 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
+import PartMotionController from "@/components/parts/PartMotionController"
 import PartWorkshopBanner from "@/components/parts/PartWorkshopBanner"
 import { partIconSource } from "@/components/parts/part-icon-source"
 import Image from "next/image"
 import { serializeJsonLd } from "@/lib/json-ld"
 
+const engineMotion: Readonly<Record<string, string>> = {
+  "Коленвал": "crank",
+  "Турбина": "turbine",
+  "Ремень ГРМ": "belt",
+  "Цепь ГРМ": "chain",
+}
+
 function PartNavigationIcon({ kind, label }: { kind: string; label?: string }) {
   const src = partIconSource(kind, label)
+  const motion = kind === "engine" && label ? engineMotion[label] : undefined
   return (
-    <span className="part-category__nav-art" aria-hidden="true">
+    <span className="part-category__nav-art" aria-hidden="true" data-part-motion={src ? motion ?? "shine" : undefined}>
       {src
         ? <>
           <Image src={src} alt="" width={144} height={144} unoptimized loading="lazy" draggable={false} />
@@ -201,6 +210,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         Не нашли нужную деталь? Оставьте заявку с маркой, моделью и номером —
         продавцы и разборки откликнутся сами.
       </p>
+      <PartMotionController />
     </div>
   )
 }

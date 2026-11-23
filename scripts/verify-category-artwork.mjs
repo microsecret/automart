@@ -218,32 +218,79 @@ try {
     }
     await context.close()
   }
-  for (const reducedMotion of ["no-preference", "reduce"]) {
-    const context = await browser.newContext({ viewport: { width: 1560, height: 1000 }, reducedMotion })
-    await context.addInitScript(() => localStorage.setItem("lw-quick-tour-v1", "done"))
+  for (const name of ["belt", "chain"]) {
+    const sprite = `public/images/ui/part-motion-v1/${name}.webp`
+    const [size, image] = await Promise.all([stat(sprite), sharp(sprite).metadata()])
+    check(`${name}: small transparent 24-frame strip`, size.size < 100000 && image.width === 3456
+      && image.height === 144 && image.hasAlpha)
+  }
+  for (const scenario of ["desktop", "mini-app", "reduced"]) {
+    const mobile = scenario !== "desktop"
+    const reducedMotion = scenario === "reduced" ? "reduce" : "no-preference"
+    const context = await browser.newContext({
+      viewport: mobile ? { width: 390, height: 860 } : { width: 1560, height: 1000 },
+      isMobile: mobile, hasTouch: mobile, reducedMotion,
+    })
+    await context.addInitScript(() => {
+      localStorage.setItem("lw-quick-tour-v1", "done")
+      window.partMotionStarts = []
+      new MutationObserver((records) => {
+        for (const { target } of records) {
+          const mode = target.dataset.partPlaying
+          if (!mode) continue
+          const overlay = target.querySelector(".part-category__nav-frames img")
+          const element = mode === "shine" ? target.querySelector(".part-category__nav-shine") : overlay ?? target.querySelector("img")
+          window.partMotionStarts.push({
+            kind: target.dataset.partMotion,
+            animation: getComputedStyle(element, mode === "shine" ? "::after" : null).animationName,
+            width: overlay?.naturalWidth,
+            active: document.querySelectorAll("[data-part-playing]").length,
+          })
+        }
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-part-playing"] })
+    })
     await context.route("**/*", (route) => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
     const page = await context.newPage()
-    await page.goto(`${base}/parts-finder/dvigatel`, { waitUntil: "domcontentloaded" })
-    const card = page.getByRole("link", { name: "Турбина", exact: true })
-    const shine = card.locator(".part-category__nav-shine")
-    const visible = () => shine.evaluate((node) => getComputedStyle(node).display !== "none")
-    check(`${reducedMotion}: no shine at rest`, !(await visible()))
-    await card.hover()
-    check(`${reducedMotion}: pointer shine respects motion setting`, await visible() === (reducedMotion === "no-preference"))
-    if (reducedMotion === "no-preference") {
-      check("shine runs once on its own mask", await shine.evaluate((node) => {
-        const animation = getComputedStyle(node, "::after")
-        return getComputedStyle(node).maskImage.includes("engine-6.webp")
-          && animation.animationName === "part-icon-shine" && animation.animationIterationCount === "1"
-      }))
+    const spriteRequests = []
+    page.on("request", request => {
+      if (request.url().includes("/part-motion-v1/")) spriteRequests.push(request.url())
+    })
+    if (scenario === "mini-app") {
+      await page.goto(`${base}/catalogs?from=telegram`, { waitUntil: "domcontentloaded" })
+      await page.getByRole("button", { name: "Каталоги", exact: true }).click()
+      await page.locator("#shop-catalog-menu").getByRole("link", { name: "Двигатель", exact: true }).click()
+      await page.getByRole("link", { name: "Обзор категории", exact: true }).click()
+      await page.waitForURL("**/parts-finder/dvigatel")
+      check("mini-app: new category link keeps Telegram navigation", await page.getByRole("link", { name: "Вернуться в приложение", exact: true }).isVisible())
+    } else {
+      await page.goto(`${base}/parts-finder/dvigatel`, { waitUntil: "domcontentloaded" })
     }
-    await page.mouse.move(0, 0)
-    check(`${reducedMotion}: leaving the card resets the shine`, !(await visible()))
-    await card.focus()
-    await page.keyboard.press("Tab")
-    await page.keyboard.press("Shift+Tab")
-    check(`${reducedMotion}: keyboard focus and shine`, await card.evaluate((node) => node.matches(":focus-visible"))
-      && await visible() === (reducedMotion === "no-preference"))
+    const queries = page.locator(".part-category__list--queries")
+    await queries.evaluate((list) => window.scrollTo(0, list.getBoundingClientRect().top + window.scrollY - 100))
+    if (scenario === "reduced") {
+      await page.waitForTimeout(950)
+      check("reduced: no autoplay or sprite downloads", spriteRequests.length === 0
+        && await page.evaluate(() => window.partMotionStarts.length === 0))
+    } else {
+      await page.waitForFunction(() => ["turbine", "crank", "belt", "chain"].every((kind) =>
+        window.partMotionStarts.some((entry) => entry.kind === kind)), null, { timeout: 18000 })
+      const starts = await page.evaluate(() => window.partMotionStarts)
+      check(`${scenario}: automatic turbine shine and crankshaft roll`, starts.some((entry) => entry.kind === "turbine" && entry.animation === "part-icon-shine")
+        && starts.some((entry) => entry.kind === "crank" && entry.animation === "part-crank-roll"))
+      check(`${scenario}: belt and chain use decoded frames`, ["belt", "chain"].every((kind) => starts.some((entry) => entry.kind === kind
+        && entry.animation === "part-mechanical-frames" && entry.width === 3456)) && spriteRequests.length === 2)
+      check(`${scenario}: only one animation at a time`, starts.every((entry) => entry.active === 1))
+      if (scenario === "desktop") {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+        await page.waitForFunction(() => !document.querySelector(".part-category__list--queries [data-part-playing]"))
+        check("desktop: no moving query icons offscreen", await queries.locator("[data-part-playing]").count() === 0)
+        await page.evaluate(() => {
+          Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" })
+          document.dispatchEvent(new Event("visibilitychange"))
+        })
+        check("desktop: background tab cancels running motion", await page.locator("[data-part-playing]").count() === 0)
+      }
+    }
     await context.close()
   }
   await writeFile(`${output}/report.json`, JSON.stringify({ checks: checks.length, results: checks, failures: [] }, null, 2))
