@@ -34,6 +34,8 @@ host allowlist. Encar catalogue discovery and Goo-net and BE FORWARD requests
 use gzip. The transport caps both the downloaded and decompressed body
 within the request deadline. BE FORWARD discovery reads the complete sitemap
 within its 8 MiB limit and retains the existing per-run candidate limit.
+The collector cron sends each scheduled parser POST once. A failed stage
+does not replay writes or delay later sources with automatic HTTP retries.
 `src/lib/nvidia-translate.ts` has its own proxy pool,
 bounded response/timeout handling and a configurable Nemotron 3.5 Bolt
 default. Originals remain available when translation fails.
